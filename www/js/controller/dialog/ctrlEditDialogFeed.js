@@ -1,20 +1,11 @@
 'use strict';
 
-function ctrlEditDialogFeed($scope, srvLocale, srvData, title, feed, editable, modeEdit, $dialog, dialog) {
+function ctrlEditDialogFeed($scope, srvLocale, srvData, title, feed, editable, modeEdit, $modalInstance) {
 
     /**
      * Helpers
      */
 
-    function promiseDialog(dialogOptions) {
-        return $dialog.dialog(dialogOptions).open();
-    }
-
-    function openDialog(dialogOptions, onSuccess) {
-        a4p.safeApply($scope, function() {
-            $dialog.dialog(dialogOptions).open().then(onSuccess);
-        });
-    }
 
     /**
      * Variables
@@ -46,7 +37,7 @@ function ctrlEditDialogFeed($scope, srvLocale, srvData, title, feed, editable, m
 
     //close dialog feed , init $scope.feed
     $scope.close = function () {
-        dialog.close(undefined);
+        $modalInstance.dismiss(undefined);
     };
 
     $scope.setSubject = function (subject) {
@@ -60,7 +51,7 @@ function ctrlEditDialogFeed($scope, srvLocale, srvData, title, feed, editable, m
     //create feed
     $scope.createFeed = function () {
     	$scope.feed.editable = true;
-        dialog.close($scope.feed);
+        $modalInstance.close($scope.feed);
     };
 
     $scope.setModeEdit = function(modeEdit){

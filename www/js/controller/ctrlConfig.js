@@ -9,21 +9,11 @@
  * @param srvLocale
  * @param srvSecurity
  * @param srvDataTransfer
- * @param $dialog
+ * @param $modal
  * @param srvAnalytics
  * @param version
  */
-function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTransfer, $dialog, srvAnalytics, version) {
-
-    $scope.promiseDialog = function (dialogOptions) {
-        return $dialog.dialog(dialogOptions).open();
-    };
-
-    $scope.openDialog = function (dialogOptions, onSuccess) {
-        a4p.safeApply($scope, function() {
-            $dialog.dialog(dialogOptions).open().then(onSuccess);
-        });
-    };
+function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTransfer, $modal, srvAnalytics, version) {
 
     /**
      * Variables
@@ -31,8 +21,8 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
 
     $scope.srvConfig = srvConfig;
 
-    $scope.email = srvSecurity.getA4pLogin();
-    $scope.password = '';
+    $scope.configEmail = srvSecurity.getA4pLogin();
+    $scope.configPassword = '';
     $scope.warningEmail = false;
     $scope.warningPassword = false;
     $scope.secureMode = srvSecurity.isSecured();
@@ -52,21 +42,21 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
 
     $scope.setEmail = function (email) {
         srvSecurity.setA4pLogin(email);
-        $scope.email = srvSecurity.getA4pLogin();
+        $scope.configEmail = srvSecurity.getA4pLogin();
     };
 
     $scope.setPassword = function (password) {
         srvSecurity.setA4pPassword(password);
-        $scope.password = password;
+        $scope.configPassword = password;
     };
 
     $scope.verifyEmail = function () {
-        $scope.warningEmail = (a4p.isUndefined($scope.email) || ($scope.email == ''));
+        $scope.warningEmail = (a4p.isUndefined($scope.configEmail) || ($scope.configEmail == ''));
         return $scope.warningEmail;
     };
 
     $scope.verifyPassword = function () {
-        $scope.warningPassword = (a4p.isUndefined($scope.password) || ($scope.password == ''));
+        $scope.warningPassword = (a4p.isUndefined($scope.configPassword) || ($scope.configPassword == ''));
         return $scope.warningPassword;
     };
 
@@ -140,9 +130,8 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
     $scope.dialogActiveCrm = function () {
         $scope.openDialog(
             {
-                backdropClick: true,
-                dialogClass: 'modal modal-left c4p-modal-search c4p-dialog',
-                backdropClass: 'modal-backdrop c4p-modal-search',
+                backdrop: true,
+                windowClass: 'modal c4p-modal-left c4p-modal-search c4p-dialog',
                 controller: 'ctrlSelectCrmsDialog',
                 templateUrl: 'partials/dialog/dialogSelectCrms.html',
                 resolve: {
@@ -173,26 +162,27 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
    	};
 
     $scope.c4pConnection = function () {
-    	if($scope.email == "demo@apps4pro.com" && $scope.password == "demo") {
+    	if($scope.configEmail.toLowerCase() == "demo@apps4pro.com" && $scope.configPassword.toLowerCase() == "demo") {
             a4p.InternalLog.log('ctrlConfig', 'Entering demo mode');
             $scope.setDemo(true);
+            //GA: user really interact with aside, he logs in
+            srvAnalytics.add('Once', 'Login - demo');
     		return;
     	}
 
         a4p.InternalLog.log('ctrlConfig', 'c4pConnection');
 
         // Copy email, password and rememberPassword variables of ctrlConfig into ctrlNavigation and srvSecurity
-        $scope.setEmail($scope.email);
-        $scope.setPassword($scope.password);
+        $scope.setEmail($scope.configEmail);
+        $scope.setPassword($scope.configPassword);
         $scope.setRememberPassword($scope.rememberPassword);
 
         if ($scope.verifyEmail() || $scope.verifyPassword()) {
             return;
         }
 
-        // GA : push object created (lead, contact, account, opportunity, note, report, calendar event)
-        // Measures the volume of created objects + functionality usage per user
-        srvAnalytics.add('Login', 'Success', version, 'Login', 'event');
+        //GA: user really interact with aside, he logs in
+        srvAnalytics.add('Once', 'Login');
 
         $scope.gotoSlide($scope.pageGuider, $scope.slideGuiderValidation);
         $scope.setDemo(false);
@@ -200,10 +190,12 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
 
     $scope.createAccount = function () {
         // Copy email and password variables of ctrlConfig into ctrlNavigation and srvSecurity
-        $scope.setEmail($scope.email);
+        $scope.setEmail($scope.configEmail);
         $scope.setPassword('');
+        a4p.InternalLog.log('ctrlConfig', 'createAccount '+$scope.configEmail);
 
         if ($scope.verifyEmail()) return;
+        a4p.InternalLog.log('ctrlConfig', 'createAccount.. '+$scope.configEmail);
 
         var fctOnHttpSuccess = function (response) {
             //response.data, response.status, response.headers
@@ -246,9 +238,8 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
                             'Account created',
                             requestTitle + ' : ' + responseLog);
 
-                    	// GA : push user subscription
-                    	// Measures the volume of converted users
-                        $scope.srvAnalytics.add('Subscribe', 'Success', $scope.email, null, 'event');
+                        //GA: user really interact with login, he register
+                        srvAnalytics.add('Once', 'Register');
 
 
                         $scope.setMessageGuider('htmlFormGuiderTextSuccessCreateAccount');
@@ -271,10 +262,10 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
         };
 
         var params = {
-            login: $scope.email,
+            login: $scope.configEmail,
             language: srvLocale.getLanguage()
         };
-        srvDataTransfer.sendData(srvConfig.c4pUrlCreateAccount, params, null, 30000)
+        srvDataTransfer.sendData(srvConfig.c4pUrlCreateAccount, params, null, 60000)
             .then(fctOnHttpSuccess, fctOnHttpError);
         $scope.setA4pSpinnerState('run');
         $scope.gotoSlide($scope.pageGuider, $scope.slideGuiderValidation)
@@ -282,7 +273,7 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
 
     $scope.requestPassword = function () {
         // Copy email and password variables of ctrlConfig into ctrlNavigation and srvSecurity
-        $scope.setEmail($scope.email);
+        $scope.setEmail($scope.configEmail);
         $scope.setPassword('');
 
         if ($scope.verifyEmail()) return;
@@ -349,7 +340,7 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
         };
 
         var params = {
-            login: $scope.email,
+            login: $scope.configEmail,
             language: srvLocale.getLanguage()
         };
         srvDataTransfer.sendData(srvConfig.c4pUrlForget, params, null, 30000)
@@ -361,8 +352,7 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
     $scope.sendErrorReport = function () {
         $scope.openDialog(
             {
-                backdrop: false,
-                dialogClass: 'modal modal-full c4p-dialog-feedback',
+                windowClass: 'modal c4p-modal-full c4p-dialog',
                 controller: 'ctrlEditDialogErrorReport',
                 templateUrl: 'partials/dialog/dialogErrorReport.html',
                 resolve: {
@@ -431,9 +421,10 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
 
         $scope.warningEmail = false;
         $scope.warningPassword = false;
-        $scope.email = srvSecurity.getA4pLogin();
-        $scope.password = '';
+        $scope.configEmail = srvSecurity.getA4pLogin();
+        $scope.configPassword = '';
 
+/*
         // Guider Inputs
         $scope.slidesInterval = -5000;
         $scope.slides = [
@@ -458,7 +449,7 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
 //                title: srvLocale.translations.htmlFormGuiderSlide3Title,
 //                text: srvLocale.translations.htmlFormGuiderSlide3Text
 //            }
-        ];
+        ];*/
 
     };
 
@@ -485,13 +476,22 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
     };
 
 
-
-
     $scope.sendFeedback = function () {
-        $scope.openDialogSendFeedback('Sales MobPad user feedback');
+        $scope.openDialogSendFeedbackReport('Sales MobPad user feedback');
     };
     $scope.openHelpDialog = function () {
         $scope.openDialogMessage(srvLocale.translations.htmlTextNeedHelpDetail);
+    };
+
+    $scope.switchUser = function(){
+
+        var array = [];
+        $scope.openDialogConfirm(srvLocale.translations.htmlTextConfirmSwitchUser , array,
+            function(confirm) {
+                if (confirm) $scope.gotoLogin();
+            }
+        );
+        
     };
 
     /**
@@ -500,8 +500,8 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
     $scope.$on('changeItemCategory', function (event, item) {
         $scope.warningEmail = false;
         $scope.warningPassword = false;
-        $scope.email = srvSecurity.getA4pLogin();
-        $scope.password = '';
+        $scope.configEmail = srvSecurity.getA4pLogin();
+        $scope.configPassword = '';
     });
 
     /**
@@ -511,4 +511,4 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
 
 
 }
-ctrlConfig.$inject = [ '$scope', 'srvConfig', 'srvLog', 'srvLocale', 'srvSecurity', 'srvDataTransfer', '$dialog', 'srvAnalytics', 'version'];
+ctrlConfig.$inject = [ '$scope', 'srvConfig', 'srvLog', 'srvLocale', 'srvSecurity', 'srvDataTransfer', '$modal', 'srvAnalytics', 'version'];

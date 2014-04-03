@@ -5,28 +5,18 @@
  *
  * @param $scope
  * @param $q
- * @param $dialog
+ * @param $modal
  * @param srvData
  * @param srvNav
  * @param srvFacet
  * @param srvConfig
  * @param srvLocale
  */
-function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, srvLocale) {
+function ctrlAction($scope, $q, $modal, srvData, srvNav, srvFacet, srvConfig, srvLocale) {
 
     /**
      * Helpers
      */
-
-    function promiseDialog(dialogOptions) {
-        return $dialog.dialog(dialogOptions).open();
-    }
-
-    function openDialog(dialogOptions, onSuccess) {
-        a4p.safeApply($scope, function() {
-            $dialog.dialog(dialogOptions).open().then(onSuccess);
-        });
-    }
 
     function createSameCompanyFilter(companyId) {
         return function (object) {
@@ -251,7 +241,7 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
         openDialog(
             {
                 backdrop: false,
-                dialogClass: 'modal c4p-modal-full c4p-dialog',
+                windowClass: 'modal c4p-modal-full c4p-dialog',
                 controller: 'ctrlTimeline',
                 templateUrl: 'partials/dialog/timeline.html',
                 resolve: {
@@ -306,9 +296,8 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
         var attachees = srvData.getTypedRemoteLinks(parentObject, 'attachee', 'Document');
 
         var dialogOptions = {
-            backdropClick: false,
-            dialogClass: 'modal modal-left c4p-modal-search c4p-dialog',
-            backdropClass: 'modal-backdrop c4p-modal-search-backdrop'
+            backdrop: false,
+            windowClass: 'modal c4p-modal-left c4p-modal-search c4p-dialog'
         };
         var resolve = {
             srvData: function () {
@@ -358,7 +347,7 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
             resolve.suggestedMenus = function () { return []; };
         }
         dialogOptions.resolve = resolve;
-        openDialog(dialogOptions, function (result) {
+        $scope.openDialogFct(dialogOptions, function (result) {
             if (a4p.isDefined(result)) {
                 a4p.safeApply($scope, function () {
                     for (var d = 0; d < result.length; d++) {
@@ -414,9 +403,8 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
             addedOrganizers.push(srvFacet.createSameTeamOrganizer(ownerObject.id.dbid));
         }
         var dialogOptions = {
-            backdropClick: false,
-            dialogClass: 'modal modal-left c4p-modal-search c4p-dialog',
-            backdropClass: 'modal-backdrop c4p-modal-search-backdrop'
+            backdrop: false,
+            windowClass: 'modal c4p-modal-left c4p-modal-search c4p-dialog'
         };
         var resolve = {
             srvData: function () {
@@ -456,9 +444,8 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
                     var newObject = $scope.srvData.createObject('Contact', {});
                     // dialog to edit a new Contact
                     return promiseDialog({
-                        backdropClick: false,
-                        dialogClass: 'modal c4p-modal-full c4p-dialog',
-                        backdropClass: 'modal-backdrop c4p-modal-create',
+                        backdrop: false,
+                        windowClass: 'modal c4p-modal-full c4p-dialog',
                         controller: 'ctrlEditDialogObject',
                         templateUrl: 'partials/dialog/edit_object.html',
                         resolve: {
@@ -479,7 +466,16 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
                                 return function (obj) {
                                     srvData.removeAndSaveObject(obj);
                                 };
-                            }
+                            },
+                            startSpinner: function () {
+                                return $scope.startSpinner;
+                            },
+                            stopSpinner: function () {
+                                return $scope.stopSpinner;
+                            },
+                            openDialogFct: function () {
+                                return $scope.openDialog;
+                            }    
                         }
                     });
                 };
@@ -496,7 +492,7 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
             resolve.suggestedMenus = function () { return menus; };
         }
         dialogOptions.resolve = resolve;
-        openDialog(dialogOptions, function (result) {
+        $scope.openDialogFct(dialogOptions, function (result) {
             if (a4p.isDefined(result)) {
                 a4p.safeApply($scope, function () {
                     for (var c = 0; c < result.length; c++) {
@@ -523,10 +519,9 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
             'documents': idsDocument,
             'emailsInput': []
         };
-        openDialog(
+        $scope.openDialog(
             {
-                backdrop: false,
-                dialogClass: 'modal c4p-modal-full c4p-modal-mail c4p-dialog',
+                windowClass: 'modal c4p-modal-full c4p-modal-mail c4p-dialog',
                 controller: 'ctrlEditDialogEmail',
                 templateUrl: 'partials/dialog/dialogEmail.html',
                 resolve: {
@@ -562,6 +557,9 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
                     },
                     modeEdit: function () {
                         return true;
+                    },
+                    openDialogFct: function () {
+                        return $scope.openDialog;
                     }
                 }
             },
@@ -593,10 +591,9 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
             location:event.location
         };
 
-        openDialog(
+        $scope.openDialogFct(
             {
-                backdrop: false,
-                dialogClass: 'modal c4p-modal-full c4p-modal-mail c4p-dialog',
+                windowClass: 'modal c4p-modal-full c4p-modal-mail c4p-dialog',
                 controller: 'ctrlDialogICal',
                 templateUrl: 'partials/dialog/dialogICal.html',
                 resolve: {
@@ -664,7 +661,7 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
             } else {
                 a4p.safeApply($scope, function() {
                     //$scope.setEditMode(true);
-                    $scope.editObjectDialog(object).then(
+                    $scope.editObjectDialog(object,
                         function (result) {
                             if (a4p.isDefined(result)) {
                                 a4p.safeApply($scope, function() {
@@ -698,10 +695,9 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
         };
         meeting = srvData.createObject('Event', meeting);
 
-        openDialog(
+        $scope.openDialogFct(
             {
-                backdrop: false,
-                dialogClass: 'modal modal-left c4p-modal-search c4p-dialog',
+                windowClass: 'modal c4p-modal-left c4p-modal-search c4p-dialog',
                 controller: 'ctrlDupMeeting',
                 templateUrl: 'partials/dialog/dialogDupMeeting.html',
                 resolve: {
@@ -762,5 +758,5 @@ function ctrlAction($scope, $q, $dialog, srvData, srvNav, srvFacet, srvConfig, s
 
 
 }
-ctrlAction.$inject = ['$scope', '$q', '$dialog', 'srvData', 'srvNav', 'srvFacet', 'srvConfig', 'srvLocale'];
+ctrlAction.$inject = ['$scope', '$q', '$modal', 'srvData', 'srvNav', 'srvFacet', 'srvConfig', 'srvLocale'];
 

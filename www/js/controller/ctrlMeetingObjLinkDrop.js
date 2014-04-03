@@ -5,7 +5,7 @@
  *
  * @param $scope
  */
-function ctrlMeetingObjLinkDrop($scope) {
+function ctrlMeetingObjLinkDrop($scope,  srvData, srvConfig) {
 
     $scope.dndActive = false;
     $scope.dropOver = false;
@@ -52,25 +52,26 @@ function ctrlMeetingObjLinkDrop($scope) {
     };
     $scope.dropEnd = function (event) {
         var obj= event.dataTransfer;
-        var mObj = $scope.currentMeetingObject;
+        var aPlan = $scope.selectedMeetingPlan;
+
+        srvData.newAttachment('Plannee', obj, aPlan);
+        aPlan.title = srvConfig.getItemName(obj);
 
         //SEEMS Dirty BUT
-        // is it need to refresh correctly the update of the ng-include directive
+        // it is needed to refresh correctly the update of the ng-include directive
         //
         a4p.safeApply($scope, function() {
             $scope.setMeetingObject(null);
         });
 
-        mObj.obj = obj;
-
         a4p.safeApply($scope, function() {
             //set view to plan
             $scope.setActionItem('plan');
-            $scope.setMeetingObject(mObj);
+            $scope.setMeetingObject(aPlan);
         });
     };
 }
-ctrlMeetingObjLinkDrop.$inject = ['$scope'];
+ctrlMeetingObjLinkDrop.$inject = ['$scope', 'srvData', 'srvConfig'];
 
 
 

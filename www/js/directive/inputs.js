@@ -36,11 +36,353 @@ directiveModule.directive('markdown', function() {
 
 angular.module("c4p/input.html", []).run(["$templateCache", function ($templateCache) {
     $templateCache.put("c4p/input.html",
-    		'<div class="form-group">' +
+            '<div class="form-group">' +
             '<label class="control-label a4p-dot"></label>' +
-            //'	<div class="form-control"></div>' +
+            //' <div class="form-control"></div>' +
             '</div>');
+
+    $templateCache.put("c4p/input-simple.html",
+            '<div></div>');
 }]);
+
+
+
+var c4pInputCompile = function (element, attrs, transclude, $compile) {
+    // BEWARE : 'ng-class' is not interpreted by Angular here (we should insert it in html)
+    //if (a4p.isDefined(attrs.warnVar)) {
+    //    element.attr('ng-class', "{'has-error': " + attrs.warnVar + "}");
+    //}
+
+    var addClearButton = function (html) {
+        return '<div class="input-group">'
+            + html
+            + '<span class="input-group-addon input-sm">'
+            //+ '<span class="input-group-addon input-sm btn-group btn-group-sm">'
+            + '<a type="button" class="btn c4p-color-action-transparent c4p-padding-w-packed" ng-click="clearInput()"><span class="glyphicon glyphicon-times-circle"></span></a>'
+            + '</span>'
+            + '</div>';
+    };
+
+    // link function
+    return function (scope, element, attrs, ngModelCtrl) {
+
+        // Dynamic type of field
+        var inputType = 'text';
+        if (a4p.isDefined(attrs.type)) {
+            inputType = attrs.type;
+        } else if (a4p.isDefined(attrs.typeVar)) {
+            // WE CANNOT move this code into COMPILE function (use of scope)
+            inputType = scope.$eval(attrs.typeVar);
+        }
+
+        // Htm template
+        var labelIcon = '';
+        if (a4p.isDefined(attrs.icon) && (attrs.icon.length > 0)) {
+            if (inputType == "tel") {
+                labelIcon = '<a href="" target=_blank><span class="glyphicon glyphicon-' + attrs.icon + ' icon-large"></span></a> ';
+                // href updated later by a watcher
+            } else if (inputType == "mail") {
+                labelIcon = '<a href="" target=_blank><span class="glyphicon glyphicon-' + attrs.icon + ' icon-large"></span></a> ';
+                // href updated later by a watcher
+            } else if (inputType == "url") {
+                labelIcon = '<a href="" target=_blank><span class="glyphicon glyphicon-' + attrs.icon + ' icon-large"></span></a> ';
+                // href updated later by a watcher
+            } else {
+                labelIcon = '<span class="glyphicon glyphicon-' + attrs.icon + ' icon-large"></span>';
+            }
+        }
+        var controlsTemplate = '';
+        if (a4p.isDefined(attrs.titleVar) && (attrs.titleVar.length > 0)) {
+            controlsTemplate = controlsTemplate + '<label class="control-label a4p-dot">' + labelIcon + '{{' + attrs.titleVar + '}}</label>';
+        }
+        /*if (a4p.isDefined(attrs.titleVar) && (attrs.titleVar.length > 0)) {
+            if (a4p.isDefined(attrs.warnVar) && (attrs.warnVar.length > 0)) {
+                controlsTemplate = controlsTemplate + '<label ng-hide="' + attrs.warnVar + '" class="control-label a4p-dot">' + labelIcon + '{{' + attrs.titleVar + '}}</label>';
+                controlsTemplate = controlsTemplate + '<span ng-show="' + attrs.warnVar + '" class="help-inline c4p-field-error-message">{{' + attrs.warnVar + '}}</span>';
+            } else {
+                controlsTemplate = controlsTemplate + '<label class="control-label a4p-dot">' + labelIcon + '{{' + attrs.titleVar + '}}</label>';
+            }
+        } else {
+            if (a4p.isDefined(attrs.warnVar) && (attrs.warnVar.length > 0)) {
+                if (labelIcon.length > 0) {
+                    controlsTemplate = controlsTemplate + '<label ng-hide="' + attrs.warnVar + '" class="control-label a4p-dot">' + labelIcon + '</label>';
+                }
+                controlsTemplate = controlsTemplate + '<span ng-show="' + attrs.warnVar + '" class="help-inline c4p-field-error-message">{{' + attrs.warnVar + '}}</span>';
+            } else {
+                if (labelIcon.length > 0) {
+                    controlsTemplate = controlsTemplate + '<label class="control-label a4p-dot">' + labelIcon + '</label>';
+                }
+            }
+        }*/
+
+        var autofocus = '';
+        if(scope.$eval(attrs.focusVar)) autofocus = 'autofocus';
+
+        var inputAttrs = 'class="form-control has-feedback" onfocus="this.select();" ' + autofocus + ' ';
+        var inputDateAttrs = 'class="form-control" onfocus="this.select();" ' + autofocus + ' ';
+        var inputTimeAttrs = 'class="form-control" onfocus="this.select();" ' + autofocus + ' ';
+        var inputSelectAttrs = 'class="form-control" ' + autofocus + ' ';
+
+        if (a4p.isDefined(attrs.ngModel)) {
+            //element.find("input").attr('ng-model', attrs.ngModel);
+            inputAttrs = inputAttrs + 'ng-model="' + attrs.ngModel + '" name="' + attrs.ngModel + '"';
+            inputSelectAttrs = inputSelectAttrs + 'ng-model="' + attrs.ngModel + '" ';
+        }
+        if (a4p.isDefined(attrs.ngChange)) {
+            //element.find("input").attr('ng-change', attrs.ngChange);
+            inputAttrs = inputAttrs + 'ng-change="' + attrs.ngChange + '" ';
+        }
+        if (a4p.isDefined(attrs.ngBlur)) {
+            inputAttrs = inputAttrs + 'ng-blur="' + attrs.ngBlur + '" ';
+        }
+        if (a4p.isDefined(attrs.placeholder)) {
+            inputAttrs = inputAttrs + 'placeholder="' + attrs.placeholder + '" ';
+        }
+        if (inputType == "tel") {
+            controlsTemplate = controlsTemplate + addClearButton('<input type="tel" ' + inputAttrs + '/>');
+        } else if (inputType == "mail") {
+            controlsTemplate = controlsTemplate + addClearButton('<input type="email" ' + inputAttrs + '/>');
+        } else if (inputType == "url") {
+            controlsTemplate = controlsTemplate + addClearButton('<input type="url" ' + inputAttrs + '/>');
+        } else if (inputType == "password") {
+            controlsTemplate = controlsTemplate + addClearButton('<input type="password" ' + inputAttrs + '/>');
+        } else if ((inputType == "number") || (inputType == "currency")) {
+            controlsTemplate = controlsTemplate + addClearButton('<input type="number" min="0" ' + inputAttrs + '/>');
+        } else if ((inputType == "probability")) {
+            controlsTemplate = controlsTemplate + addClearButton('<input type="number" min="0" max="100" ' + inputAttrs + '/>');
+        } else if ((inputType == "boolean")) {
+            controlsTemplate = controlsTemplate + addClearButton('<input type="checkbox" ' + inputAttrs + '/>');
+        } else if (inputType == "date") {
+            inputDateAttrs = inputDateAttrs + 'ng-model="currentDatePart" ';
+            if (a4p.isDefined(attrs.ngChange)) {
+                inputDateAttrs = inputDateAttrs + 'ng-change="onDateChanged();' + attrs.ngChange + '" ';
+            } else {
+                inputDateAttrs = inputDateAttrs + 'ng-change="onDateChanged()" ';
+            }
+            if (a4p.isDefined(attrs.ngBlur)) {
+                inputDateAttrs = inputDateAttrs + 'ng-blur="' + attrs.ngBlur + '" ';
+            }
+            controlsTemplate = controlsTemplate + '<input type="date" c4p-inputdate ' + inputDateAttrs + '/>';
+        } else if (inputType == "time") {
+            inputTimeAttrs = inputTimeAttrs + 'ng-model="currentTimePart"  ';
+            if (a4p.isDefined(attrs.ngChange)) {
+                inputTimeAttrs = inputTimeAttrs + 'ng-change="onTimeChanged();' + attrs.ngChange + '" ';
+            } else {
+                inputTimeAttrs = inputTimeAttrs + 'ng-change="onTimeChanged()" ';
+            }
+            if (a4p.isDefined(attrs.ngBlur)) {
+                inputTimeAttrs = inputTimeAttrs + 'ng-blur="' + attrs.ngBlur + '" ';
+            }
+            controlsTemplate = controlsTemplate + '<input type="time" c4p-inputdate ' + inputTimeAttrs + '/>';
+        } else if (inputType == "datetime") {
+            inputDateAttrs = inputDateAttrs + 'ng-model="currentDatePart" ';
+            if (a4p.isDefined(attrs.ngChange)) {
+                inputDateAttrs = inputDateAttrs + 'ng-change="onDateTimeChanged();' + attrs.ngChange + '" ';
+            } else {
+                inputDateAttrs = inputDateAttrs + 'ng-change="onDateTimeChanged()" ';
+            }
+            if (a4p.isDefined(attrs.ngBlur)) {
+                inputDateAttrs = inputDateAttrs + 'ng-blur="' + attrs.ngBlur + '" ';
+            }
+            inputTimeAttrs = inputTimeAttrs + 'ng-model="currentTimePart"  ';
+            if (a4p.isDefined(attrs.ngChange)) {
+                inputTimeAttrs = inputTimeAttrs + 'ng-change="onDateTimeChanged();' + attrs.ngChange + '" ';
+            } else {
+                inputTimeAttrs = inputTimeAttrs + 'ng-change="onDateTimeChanged()" ';
+            }
+            if (a4p.isDefined(attrs.ngBlur)) {
+                inputTimeAttrs = inputTimeAttrs + 'ng-blur="' + attrs.ngBlur + '" ';
+            }
+            //controlsTemplate = controlsTemplate + '{{currentDate}} {{currentDatePart}} {{currentTimePart}}';
+            controlsTemplate = controlsTemplate + '<input type="date" c4p-inputdate class="col-xxs-7 form-control" ' + inputDateAttrs + '/>';
+            controlsTemplate = controlsTemplate + '<input type="time" c4p-inputdate class="col-xxs-4 col-xxs-offset-1 form-control" ' + inputTimeAttrs + '/>';
+            //controlsTemplate = controlsTemplate + '<input type="datetime" c4p-inputdate style="margin-bottom:10px;" ' + inputDateAttrs + '/>';
+
+        } else if (inputType == "textarea") {
+            inputAttrs = inputAttrs + 'ng-trim="false"';
+            if (a4p.isDefined(attrs.rows)) {
+                inputAttrs = inputAttrs + 'rows="' + attrs.rows + '" ';
+            }
+            if (a4p.isDefined(attrs.cols)) {
+                inputAttrs = inputAttrs + 'cols="' + attrs.cols + '" ';
+            }
+            controlsTemplate = controlsTemplate + addClearButton('<textarea ' + inputAttrs + '/>');
+        } else if (inputType == "select") {
+            var optionsArr = scope.$eval(attrs.optionsVar);
+            controlsTemplate = controlsTemplate + '<select '+ inputSelectAttrs + '>';
+            if(optionsArr != '') {
+                for(var key in optionsArr) {
+                    controlsTemplate = controlsTemplate + '<option>' + optionsArr[key] + '</option>';
+                }
+            }
+            controlsTemplate = controlsTemplate + '</select>';
+        } else {
+            controlsTemplate = controlsTemplate + addClearButton('<input type="text" ' + inputAttrs + '/>');
+        }
+
+        //TODO opportunity to remove old text in the input
+        //controlsTemplate = controlsTemplate + '<span class="glyphicon glyphicon-times-circle form-control-feedback"></span>';
+
+        var controlsElt = $(element[0]);//.find("div.form-group");
+        //controlsElt.append($compile(controlsTemplate)(scope));
+        controlsTemplate = $compile(controlsTemplate)(scope);
+        var controlsElement = angular.element(controlsTemplate);
+        controlsElt.append(controlsElement);
+
+        // Watchers
+
+        // Equivalent of 'ng-class="{\'has-error\': ' + attrs.warnVar + '}"' directive
+        /*
+        //TODO mle 
+        var oldWarnValue = undefined;
+        function warnVarWatchAction(warnValue) {
+            if (warnValue) {
+                if (!oldWarnValue) {
+                    element.find(".form-group").addClass('has-error');
+                    element.find(".form-group").addClass('scrollTop'); //MLE automatic scroll to value
+                }
+            } else {
+                if (oldWarnValue){
+                    element.find(".form-group").removeClass('has-error');
+                    element.find(".form-group").removeClass('scrollTop');
+                }
+            }
+            oldWarnValue = warnValue;
+        }
+        if (a4p.isDefined(attrs.warnVar) && (attrs.warnVar.length > 0)) {
+            // we watch and modify class by ourself
+            scope.$watch(attrs.warnVar, warnVarWatchAction, true);
+            attrs.$observe('class', function (value) {
+                var ngClass = scope.$eval(attrs.warnVar);
+                warnVarWatchAction(ngClass, ngClass);
+            });
+        }*/
+
+        scope.initInputCtrl(ngModelCtrl, inputType);
+        //if (a4p.isDefined(attrs.ngModel)) scope.setInputValue(scope.$eval(attrs.ngModel));
+
+        // change the attribute
+        //attrs.$set('ngModel', 'new value');
+        // observe changes to interpolated attribute ({{...}})
+        //attrs.$observe('ngModel', function(value) {
+        //    scope.setInputValue(value);
+        //});
+
+        // prevent ios bug (keyboard) fixed pb
+        // cf. http://stackoverflow.com/questions/7970389/ios-5-fixed-positioning-and-virtual-keyboard
+        element.find("input").bind('blur',function() {
+            $(window).scrollTop(0);
+            $(document.body).scrollTop(0);
+            //a4p.InternalLog.log('c4pInputCompile', 'input blur : '+element[0].outerHTML);
+        });
+        element.find("textarea").bind('blur',function() {
+            $(window).scrollTop(0);
+            $(document.body).scrollTop(0);
+        });
+
+        // Input
+        if (inputType == "tel") {
+            if (a4p.isDefined(attrs.ngModel) && a4p.isDefined(attrs.icon) && (attrs.icon.length > 0)) {
+                scope.$watch(attrs.ngModel, function (value) {
+                    element.find("a").attr('href', 'tel:' + encodeURIComponent(value));
+                });
+            }
+        } else if (inputType == "mail") {
+            if (a4p.isDefined(attrs.ngModel) && a4p.isDefined(attrs.icon) && (attrs.icon.length > 0)) {
+                scope.$watch(attrs.ngModel, function (value) {
+                    element.find("a").attr('href', 'mailto:' + encodeURIComponent(value));
+                });
+            }
+        } else if (inputType == "url") {
+            if (a4p.isDefined(attrs.ngModel) && a4p.isDefined(attrs.icon) && (attrs.icon.length > 0)) {
+                scope.$watch(attrs.ngModel, function (value) {
+                    element.find("a").attr('href', encodeURI(value));
+                });
+            }
+        } else if (inputType == "date") {
+             if (a4p.isDefined(attrs.ngModel)) {
+                 scope.$watch(attrs.ngModel, function (value) {
+                    // Required if user set some other fields on same $digest loop
+                    scope.setInputValue(value);
+                });
+            }
+        } else if (inputType == "time") {
+            if (a4p.isDefined(attrs.ngModel)) {
+                scope.$watch(attrs.ngModel, function (value) {
+                    // Required if user set some other fields on same $digest loop
+                    scope.setInputValue(value);
+                });
+            }
+        } else if (inputType == "datetime") {
+            if (a4p.isDefined(attrs.ngModel)) {
+                scope.$watch(attrs.ngModel, function (value) {
+                    // Required if user set some other fields on same $digest loop
+                    scope.setInputValue(value);
+                });
+            }
+        } else if (inputType == "textarea") {
+            // Autogrow textarea
+            var textAreaElement = controlsElement[0],
+                cols = textAreaElement.cols,// Probably a default value : 20 while really over 35
+                minCols = -1,
+                maxCols = -1,
+                initialRows = textAreaElement.rows,
+                rows = textAreaElement.rows,
+                offsetWidth = textAreaElement.offsetWidth,
+                previousValueInChange = '';
+
+            if (a4p.isDefined(attrs.ngModel)) {
+                scope.$watch(attrs.ngModel, function (value, oldValue) {
+                    if (value == oldValue) return; // do not need change textarea size
+
+                    if ((textAreaElement.offsetHeight < textAreaElement.scrollHeight) || (textAreaElement.offsetWidth < offsetWidth)) {
+                        // Scrollbar appears => grow
+                        var nbLines = Math.max(rows, Math.ceil(textAreaElement.rows * textAreaElement.scrollHeight / textAreaElement.offsetHeight));
+                        if (textAreaElement.rows < nbLines) {
+                            textAreaElement.rows = nbLines;
+                            if (scope.scrollRefresh) scope.scrollRefresh();
+                        } else {
+                            textAreaElement.rows = textAreaElement.rows + 1;
+                            if (scope.scrollRefresh) scope.scrollRefresh();
+                        }
+                        // Number of cols in a textarea depends of many factors such fonts, browsers, etc...
+                        // => we try to approximate the right cols value by registering minimas and maximas encountered
+                        var newMinCols = Math.floor(value.length / textAreaElement.rows);
+                        var newMaxCols = Math.ceil(value.length / textAreaElement.rows);
+                        if ((minCols < 0) || (newMinCols < minCols)) minCols = newMinCols;
+                        if ((maxCols < 0) || (newMaxCols > maxCols)) maxCols = newMaxCols;
+                        previousValueInChange = value;
+                    } else if (value.length == 0) {
+                        // Reset to initial values if empty
+                        minCols = -1;
+                        maxCols = -1;
+                        textAreaElement.rows = initialRows;
+                        if (scope.scrollRefresh) scope.scrollRefresh();
+                        previousValueInChange = value;
+                    } else if ((value.length < (previousValueInChange.length - minCols)) || (value.length > (previousValueInChange.length + minCols))) {
+                        // Wait for a certain amount of text before changing size
+                        var nbLines = Math.max(rows, value.split(new RegExp("\n")).length);
+                        var nbMinRows = nbLines;
+                        var nbMaxRows = nbLines;
+                        if (maxCols > 0) nbMinRows = Math.max(nbLines, Math.floor(value.length / maxCols));
+                        if (minCols > 0) nbMaxRows = Math.max(nbLines, Math.floor(value.length / minCols));
+                        if ((maxCols > 0) && (textAreaElement.rows < nbMinRows)) {
+                            // Estimations say that textarea is too small
+                            textAreaElement.rows = nbMinRows;
+                            if (scope.scrollRefresh) scope.scrollRefresh();
+                        } else if ((minCols > 0) && (textAreaElement.rows > nbMaxRows)) {
+                            // Estimations say that textarea is too big
+                            textAreaElement.rows = nbMaxRows;
+                            if (scope.scrollRefresh) scope.scrollRefresh();
+                        }
+                        previousValueInChange = value;
+                    }
+                });
+            }
+        }
+    };
+};
+
 
 angular.module('c4p.input', ['c4p/input.html'])
     .controller('c4pInputCtrl', ['$scope', function ($scope) {
@@ -70,9 +412,14 @@ angular.module('c4p.input', ['c4p/input.html'])
          };
          */
 
-        $scope.stringDate = '';
-        $scope.stringTime = '';
-        $scope.previousStringDate = '';
+        $scope.currentDate = new Date();
+        $scope.currentDatePart = new Date();
+        $scope.currentTimePart = new Date();
+        $scope.previousDate = new Date();
+
+        //$scope.stringDate = '';
+        //$scope.stringTime = '';
+        //$scope.previousStringDate = '';
         $scope.valueType = '';
         $scope.ngModelCtrl = null;
 
@@ -86,8 +433,20 @@ angular.module('c4p.input', ['c4p/input.html'])
         };
 
         $scope.setInputValue = function (value) {
+
+            console.log('input : '+value);
             if (!$scope.ngModelCtrl) return;
 
+            if (($scope.valueType == 'time') || ($scope.valueType == 'date') || ($scope.valueType == 'datetime')) {
+
+                var date = a4pDateParse(a4pDateFormatObject(value));
+                if (!date) date = new Date();
+                $scope.currentDate = date;
+                $scope.currentDatePart = $scope.currentDate;
+                $scope.currentTimePart = $scope.currentDate;
+            }
+
+/*
             if (($scope.valueType == 'time') || ($scope.valueType == 'datetime')) {
                 var hourS, minuteS;
                 var timeReg = new RegExp("([01]\\d|2[0-3]):([0-5]\\d)");
@@ -101,6 +460,10 @@ angular.module('c4p.input', ['c4p/input.html'])
                         minuteS = '00';
                     }
                     $scope.stringTime = hourS + ':' + minuteS;
+
+                    $scope.currentDate.setHours(parseInt(hourS));
+                    $scope.currentDate.setMinutes(parseInt(minuteS));
+                    $scope.currentDate.setSeconds(0);
                 }
             }
             if (($scope.valueType == 'date') || ($scope.valueType == 'datetime')) {
@@ -114,42 +477,50 @@ angular.module('c4p.input', ['c4p/input.html'])
                     while (dayS.length < 2) dayS = '0' + dayS;
                     $scope.stringDate = yearS + '-' + monthS + '-' + dayS;
                     $scope.previousStringDate = $scope.stringDate;
+
+                    $scope.currentDate.setDate(parseInt(dayS));
+                    $scope.currentDate.setMonth(parseInt(monthS));
+                    $scope.currentDate.setYear(parseInt(yearS));
                 }
             }
+*/
+        };
+
+        $scope.clearInput = function () {
+            if (!$scope.ngModelCtrl) return;
+
+            $scope.ngModelCtrl.$setViewValue('');
+            $scope.ngModelCtrl.$render();
         };
 
         $scope.onDateChanged = function () {
             if (!$scope.ngModelCtrl) return;
 
-            var dateReg = new RegExp("[-/]+", "g");
-            var dateParts = $scope.stringDate.split(dateReg);
-            var yearS = dateParts[0] || '0000';
-            var monthS = dateParts[1] || '00';
-            while (monthS.length < 2) monthS = '0' + monthS;
-            var dayS = dateParts[2] || '00';
-            while (dayS.length < 2) dayS = '0' + dayS;
-
-            var newDate = yearS + '-' + monthS + '-' + dayS;
-            if (!a4pDateParse(newDate)) {
-                a4p.ErrorLog.log('c4pInputCtrl', 'date ' + $scope.stringDate + ' is invalid => return to previous date ' + $scope.previousStringDate);
-                $scope.stringDate = $scope.previousStringDate;
-                dateParts = $scope.stringDate.split(dateReg);
-                yearS = dateParts[0] || '1970';
-                monthS = dateParts[1] || '01';
-                while (monthS.length < 2) monthS = '0' + monthS;
-                dayS = dateParts[2] || '01';
-                while (dayS.length < 2) dayS = '0' + dayS;
-                newDate = yearS + '-' + monthS + '-' + dayS;
+            if (!$scope.currentDatePart) $scope.currentDatePart = new Date();
+            $scope.currentDate.setFullYear()($scope.currentDatePart.getFullYear());
+            $scope.currentDate.setMonth($scope.currentDatePart.getMonth());
+            $scope.currentDate.setDate($scope.currentDatePart.getDate());
+            /*
+            var newDate = a4pDateFormatObject($scope.stringDate);
+            var dateS = a4pDateExtractDate(newDate);
+            if (!dateS) { 
+                newDate = a4pDateFormatObject($scope.previousStringDate);
+                dateS = a4pDateExtractDate(newDate);
             }
+            */
 
-            $scope.ngModelCtrl.$setViewValue(newDate);
+            var formatDate = a4pDateFormat($scope.currentDate);
+            $scope.ngModelCtrl.$setViewValue(formatDate);
             $scope.ngModelCtrl.$render();
         };
 
         $scope.onTimeChanged = function () {
             if (!$scope.ngModelCtrl) return;
 
-            var hourS, minuteS;
+            if (!$scope.currentTimePart) $scope.currentTimePart = new Date();
+            $scope.currentDate.setHours($scope.currentTimePart.getHours());
+            $scope.currentDate.setMinutes($scope.currentTimePart.getMinutes());
+            /*var hourS, minuteS;
             var timeReg = new RegExp("([01]\\d|2[0-3]):([0-5]\\d)");
             var timeParts = $scope.stringTime.match(timeReg);
             if (timeParts != null) {
@@ -159,53 +530,40 @@ angular.module('c4p.input', ['c4p/input.html'])
                 hourS = '00';
                 minuteS = '00';
             }
-
-            // do not show seconds
             $scope.ngModelCtrl.$setViewValue(hourS + ':' + minuteS + ':00');
+            */
+
+            var formatDate = a4pDateFormat($scope.currentDate);
+            $scope.ngModelCtrl.$setViewValue(formatDate);
             $scope.ngModelCtrl.$render();
         };
 
         $scope.onDateTimeChanged = function () {
+
             if (!$scope.ngModelCtrl) return;
 
-            var dateReg = new RegExp("[-/]+", "g");
-            var dateParts = $scope.stringDate.split(dateReg);
-            var yearS = dateParts[0] || '0000';
-            var monthS = dateParts[1] || '00';
-            while (monthS.length < 2) monthS = '0' + monthS;
-            var dayS = dateParts[2] || '00';
-            while (dayS.length < 2) dayS = '0' + dayS;
+            if (!$scope.currentDatePart) $scope.currentDatePart = new Date();
+            if (!$scope.currentTimePart) $scope.currentTimePart = new Date();
+            $scope.currentDate.setFullYear($scope.currentDatePart.getFullYear());
+            $scope.currentDate.setMonth($scope.currentDatePart.getMonth());
+            $scope.currentDate.setDate($scope.currentDatePart.getDate());
+            $scope.currentDate.setHours($scope.currentTimePart.getHours());
+            $scope.currentDate.setMinutes($scope.currentTimePart.getMinutes());
 
-            var hourS, minuteS;
-            var timeReg = new RegExp("([01]\\d|2[0-3]):([0-5]\\d)");
-            var timeParts = $scope.stringTime.match(timeReg);
-            if (timeParts != null) {
-                hourS = timeParts[1] || '00';
-                minuteS = timeParts[2] || '00';
-            } else {
-                hourS = '00';
-                minuteS = '00';
+/*
+            var newDate = a4pDateFormatObject($scope.stringDate);
+            $scope.currentDate = a4pDateParse(newDate);
+            if (!$scope.currentDate) {
+                newDate = a4pDateFormatObject($scope.previousStringDate);
+                $scope.currentDate = a4pDateParse(newDate);
             }
+            */
 
-            var newDate = yearS + '-' + monthS + '-' + dayS + ' ' + hourS + ':' + minuteS + ':00';
-            if (!a4pDateParse(newDate)) {
-                a4p.ErrorLog.log('c4pInputCtrl', 'date ' + $scope.stringDate + ' is invalid => return to previous date ' + $scope.previousStringDate);
-                $scope.stringDate = $scope.previousStringDate;
-                $scope.stringDate = $scope.previousStringDate;
-                dateParts = $scope.stringDate.split(dateReg);
-                yearS = dateParts[0] || '1970';
-                monthS = dateParts[1] || '01';
-                while (monthS.length < 2) monthS = '0' + monthS;
-                dayS = dateParts[2] || '01';
-                while (dayS.length < 2) dayS = '0' + dayS;
-                newDate = yearS + '-' + monthS + '-' + dayS + ' ' + hourS + ':' + minuteS + ':00';
-            }
-
-            // do not show seconds
-            $scope.ngModelCtrl.$setViewValue(newDate);
+            var formatDate = a4pDateFormat($scope.currentDate);
+            $scope.ngModelCtrl.$setViewValue(formatDate);
             $scope.ngModelCtrl.$render();
         };
-    }]).directive('c4pInputLimited', [function () {
+    }]).directive('c4pInputlimited', [function () {
         return {
             restrict: 'E',
             replace: true,
@@ -274,7 +632,7 @@ angular.module('c4p.input', ['c4p/input.html'])
             }
         };
     }])
-    .directive('c4pInputCard', [function () {
+    .directive('c4pInputcard', [function () {
         return {
             restrict: 'E',
             replace: true,
@@ -331,313 +689,21 @@ angular.module('c4p.input', ['c4p/input.html'])
             controller: 'c4pInputCtrl',
             templateUrl: 'c4p/input.html',
             scope: true,// create new scope to isolate c4pInputCtrl from sibling fields
-            compile: function compile(element, attrs, transclude) {
-                // BEWARE : 'ng-class' is not interpreted by Angular here (we should insert it in html)
-                //if (a4p.isDefined(attrs.warnVar)) {
-                //    element.attr('ng-class', "{'has-error': " + attrs.warnVar + "}");
-                //}
-
-                // link function
-                return function (scope, element, attrs, ngModelCtrl) {
-                    // Dynamic type of field
-                    var inputType = 'text';
-                    if (a4p.isDefined(attrs.type)) {
-                        inputType = attrs.type;
-                    } else if (a4p.isDefined(attrs.typeVar)) {
-                        // WE CANNOT move this code into COMPILE function (use of scope)
-                        inputType = scope.$eval(attrs.typeVar);
-                    }
-
-                    // Htm template
-                    var labelIcon = '';
-                    if (a4p.isDefined(attrs.icon) && (attrs.icon.length > 0)) {
-                        if (inputType == "tel") {
-                            labelIcon = '<a href="" target=_blank><span class="glyphicon glyphicon-' + attrs.icon + ' icon-large"></span></a> ';
-                            // href updated later by a watcher
-                        } else if (inputType == "mail") {
-                            labelIcon = '<a href="" target=_blank><span class="glyphicon glyphicon-' + attrs.icon + ' icon-large"></span></a> ';
-                            // href updated later by a watcher
-                        } else if (inputType == "url") {
-                            labelIcon = '<a href="" target=_blank><span class="glyphicon glyphicon-' + attrs.icon + ' icon-large"></span></a> ';
-                            // href updated later by a watcher
-                        } else {
-                            labelIcon = '<span class="glyphicon glyphicon-' + attrs.icon + ' icon-large"></span>';
-                        }
-                    }
-                    var controlsTemplate = '';
-                    if (a4p.isDefined(attrs.titleVar) && (attrs.titleVar.length > 0)) {
-                        if (a4p.isDefined(attrs.warnVar) && (attrs.warnVar.length > 0)) {
-                            controlsTemplate = controlsTemplate + '<label ng-hide="' + attrs.warnVar + '" class="control-label a4p-dot">' + labelIcon + '{{' + attrs.titleVar + '}}</label>';
-                            controlsTemplate = controlsTemplate + '<span ng-show="' + attrs.warnVar + '" class="help-inline c4p-field-error-message">{{' + attrs.warnVar + '}}</span>';
-                        } else {
-                            controlsTemplate = controlsTemplate + '<label class="control-label a4p-dot">' + labelIcon + '{{' + attrs.titleVar + '}}</label>';
-                        }
-                    } else {
-                        if (a4p.isDefined(attrs.warnVar) && (attrs.warnVar.length > 0)) {
-                            if (labelIcon.length > 0) {
-                                controlsTemplate = controlsTemplate + '<label ng-hide="' + attrs.warnVar + '" class="control-label a4p-dot">' + labelIcon + '</label>';
-                            }
-                            controlsTemplate = controlsTemplate + '<span ng-show="' + attrs.warnVar + '" class="help-inline c4p-field-error-message">{{' + attrs.warnVar + '}}</span>';
-                        } else {
-                            if (labelIcon.length > 0) {
-                                controlsTemplate = controlsTemplate + '<label class="control-label a4p-dot">' + labelIcon + '</label>';
-                            }
-                        }
-                    }
-                    
-                    var autofocus = '';
-                    if(scope.$eval(attrs.focusVar)) autofocus = 'autofocus';
-                    
-                    var inputAttrs = 'class="form-control" onfocus="this.select();" ' + autofocus + ' ';
-                    var inputDateAttrs = 'class="form-control" onfocus="this.select();" ' + autofocus + ' ';
-                    var inputTimeAttrs = 'class="form-control" onfocus="this.select();" ' + autofocus + ' ';
-                    var inputSelectAttrs = 'class="form-control" ' + autofocus + ' ';
-                    
-                    if (a4p.isDefined(attrs.ngModel)) {
-                        //element.find("input").attr('ng-model', attrs.ngModel);
-                        inputAttrs = inputAttrs + 'ng-model="' + attrs.ngModel + '" ';
-                        inputSelectAttrs = inputSelectAttrs + 'ng-model="' + attrs.ngModel + '" ';
-                    }
-                    if (a4p.isDefined(attrs.ngChange)) {
-                        //element.find("input").attr('ng-change', attrs.ngChange);
-                        inputAttrs = inputAttrs + 'ng-change="' + attrs.ngChange + '" ';
-                    }
-                    if (a4p.isDefined(attrs.c4pBlur)) {
-                        inputAttrs = inputAttrs + 'c4p-blur="' + attrs.c4pBlur + '" ';
-                    }
-                    if (a4p.isDefined(attrs.placeholder)) {
-                        inputAttrs = inputAttrs + 'placeholder="' + attrs.placeholder + '" ';
-                    }
-                    if (inputType == "tel") {
-                        controlsTemplate = controlsTemplate + '<input type="tel" ' + inputAttrs + '/>';
-                    } else if (inputType == "mail") {
-                        controlsTemplate = controlsTemplate + '<input type="email" ' + inputAttrs + '/>';
-                    } else if (inputType == "url") {
-                        controlsTemplate = controlsTemplate + '<input type="url" ' + inputAttrs + '/>';
-                    } else if ((inputType == "number") || (inputType == "currency")) {
-                        controlsTemplate = controlsTemplate + '<input type="number" min="0" ' + inputAttrs + '/>';
-                    } else if ((inputType == "probability")) {
-                        controlsTemplate = controlsTemplate + '<input type="number" min="0" max="100" ' + inputAttrs + '/>';
-                    } else if ((inputType == "boolean")) {
-                        controlsTemplate = controlsTemplate + '<input type="checkbox" ' + inputAttrs + '/>';
-                    } else if (inputType == "date") {
-                        inputDateAttrs = inputDateAttrs + 'ng-model="stringDate" ';
-                        if (a4p.isDefined(attrs.ngChange)) {
-                            inputDateAttrs = inputDateAttrs + 'ng-change="onDateChanged();' + attrs.ngChange + '" ';
-                        } else {
-                            inputDateAttrs = inputDateAttrs + 'ng-change="onDateChanged()" ';
-                        }
-                        if (a4p.isDefined(attrs.c4pBlur)) {
-                            inputDateAttrs = inputDateAttrs + 'c4p-blur="' + attrs.c4pBlur + '" ';
-                        }
-                        controlsTemplate = controlsTemplate + '<input type="date" c4p-input-date style="margin-bottom:10px;" ' + inputDateAttrs + '/>';
-                    } else if (inputType == "time") {
-                        inputTimeAttrs = inputTimeAttrs + 'ng-model="stringTime" ';
-                        if (a4p.isDefined(attrs.ngChange)) {
-                            inputTimeAttrs = inputTimeAttrs + 'ng-change="onTimeChanged();' + attrs.ngChange + '" ';
-                        } else {
-                            inputTimeAttrs = inputTimeAttrs + 'ng-change="onTimeChanged()" ';
-                        }
-                        if (a4p.isDefined(attrs.c4pBlur)) {
-                            inputTimeAttrs = inputTimeAttrs + 'c4p-blur="' + attrs.c4pBlur + '" ';
-                        }
-                        controlsTemplate = controlsTemplate + '<input type="time" c4p-input-date style="margin-bottom:10px;" ' + inputTimeAttrs + '/>';
-                    } else if (inputType == "datetime") {
-                        inputDateAttrs = inputDateAttrs + 'ng-model="stringDate" ';
-                        if (a4p.isDefined(attrs.ngChange)) {
-                            inputDateAttrs = inputDateAttrs + 'ng-change="onDateTimeChanged();' + attrs.ngChange + '" ';
-                        } else {
-                            inputDateAttrs = inputDateAttrs + 'ng-change="onDateTimeChanged()" ';
-                        }
-                        if (a4p.isDefined(attrs.c4pBlur)) {
-                            inputDateAttrs = inputDateAttrs + 'c4p-blur="' + attrs.c4pBlur + '" ';
-                        }
-                        inputTimeAttrs = inputTimeAttrs + 'ng-model="stringTime" ';
-                        if (a4p.isDefined(attrs.ngChange)) {
-                            inputTimeAttrs = inputTimeAttrs + 'ng-change="onDateTimeChanged();' + attrs.ngChange + '" ';
-                        } else {
-                            inputTimeAttrs = inputTimeAttrs + 'ng-change="onDateTimeChanged()" ';
-                        }
-                        if (a4p.isDefined(attrs.c4pBlur)) {
-                            inputTimeAttrs = inputTimeAttrs + 'c4p-blur="' + attrs.c4pBlur + '" ';
-                        }
-                        controlsTemplate = controlsTemplate + '<input type="date" c4p-input-date style="margin-bottom:10px;" ' + inputDateAttrs + '/>';
-                        controlsTemplate = controlsTemplate + '<input type="time" c4p-input-date style="margin-bottom:10px;" ' + inputTimeAttrs + '/>';
-                    } else if (inputType == "textarea") {
-                        inputAttrs = inputAttrs + 'ng-trim="false"';
-                        if (a4p.isDefined(attrs.rows)) {
-                            inputAttrs = inputAttrs + 'rows="' + attrs.rows + '" ';
-                        }
-                        if (a4p.isDefined(attrs.cols)) {
-                            inputAttrs = inputAttrs + 'cols="' + attrs.cols + '" ';
-                        }
-                        controlsTemplate = controlsTemplate + '<textarea ' + inputAttrs + '/>';
-                    } else if (inputType == "select") {
-                    	var optionsArr = scope.$eval(attrs.optionsVar);
-                    	
-                    	controlsTemplate = controlsTemplate + '<select '+ inputSelectAttrs + '>';
-                    	
-                    	if(optionsArr != '') {
-                    		for(var key in optionsArr) {
-                    			controlsTemplate = controlsTemplate + '<option>' + optionsArr[key] + '</option>';
-                    		}
-                    	}
-                    	
-                    	controlsTemplate = controlsTemplate + '</select>';
-                    } else {
-                        controlsTemplate = controlsTemplate + '<input type="text" ' + inputAttrs + '/>';
-                    }
-                    
-                    var controlsElt = $(element[0]);//.find("div.form-group");
-                    //controlsElt.append($compile(controlsTemplate)(scope));
-                    controlsTemplate = $compile(controlsTemplate)(scope);
-                    var controlsElement = angular.element(controlsTemplate);
-                    controlsElt.append(controlsElement);
-
-                    // Watchers
-
-                    // Equivalent of 'ng-class="{\'has-error\': ' + attrs.warnVar + '}"' directive
-                    if (a4p.isDefined(attrs.warnVar) && (attrs.warnVar.length > 0)) {
-                        // we watch and modify class by ourself
-                        scope.$watch(attrs.warnVar, warnVarWatchAction, true);
-
-                        attrs.$observe('class', function (value) {
-                            var ngClass = scope.$eval(attrs.warnVar);
-                            warnVarWatchAction(ngClass, ngClass);
-                        });
-                    }
-                    var oldWarnValue = undefined;
-                    function warnVarWatchAction(warnValue) {
-                        if (warnValue) {
-                            if (!oldWarnValue) {
-                            	element.addClass('has-error');
-                            	element.addClass('scrollTop'); //MLE automatic scroll to value
-                            }
-                        } else {
-                            if (oldWarnValue){
-                            	element.removeClass('has-error');
-                            	element.removeClass('scrollTop');
-                            }
-                        }
-                        oldWarnValue = warnValue;
-                    }
-
-                    scope.initInputCtrl(ngModelCtrl, inputType);
-                    if (a4p.isDefined(attrs.ngModel)) {
-                        scope.setInputValue(scope.$eval(attrs.ngModel));
-                    }
-                    // change the attribute
-                    //attrs.$set('ngModel', 'new value');
-                    // observe changes to interpolated attribute ({{...}})
-                    //attrs.$observe('ngModel', function(value) {
-                    //    scope.setInputValue(value);
-                    //});
-
-                    // Input
-                    if (inputType == "tel") {
-                        if (a4p.isDefined(attrs.ngModel) && a4p.isDefined(attrs.icon) && (attrs.icon.length > 0)) {
-                            scope.$watch(attrs.ngModel, function (value) {
-                                element.find("a").attr('href', 'tel:' + encodeURIComponent(value));
-                            });
-                        }
-                    } else if (inputType == "mail") {
-                        if (a4p.isDefined(attrs.ngModel) && a4p.isDefined(attrs.icon) && (attrs.icon.length > 0)) {
-                            scope.$watch(attrs.ngModel, function (value) {
-                                element.find("a").attr('href', 'mailto:' + encodeURIComponent(value));
-                            });
-                        }
-                    } else if (inputType == "url") {
-                        if (a4p.isDefined(attrs.ngModel) && a4p.isDefined(attrs.icon) && (attrs.icon.length > 0)) {
-                            scope.$watch(attrs.ngModel, function (value) {
-                                element.find("a").attr('href', encodeURI(value));
-                            });
-                        }
-                    } else if (inputType == "date") {
-                        if (a4p.isDefined(attrs.ngModel)) {
-                            scope.$watch(attrs.ngModel, function (value) {
-                                // Required if user set some other fields on same $digest loop
-                                scope.setInputValue(value);
-                            });
-                        }
-                    } else if (inputType == "time") {
-                        if (a4p.isDefined(attrs.ngModel)) {
-                            scope.$watch(attrs.ngModel, function (value) {
-                                // Required if user set some other fields on same $digest loop
-                                scope.setInputValue(value);
-                            });
-                        }
-                    } else if (inputType == "datetime") {
-                        if (a4p.isDefined(attrs.ngModel)) {
-                            scope.$watch(attrs.ngModel, function (value) {
-                                // Required if user set some other fields on same $digest loop
-                                scope.setInputValue(value);
-                            });
-                        }
-                    } else if (inputType == "textarea") {
-                        // Autogrow textarea
-                        var textAreaElement = controlsElement[0],
-                            cols = textAreaElement.cols,// Probably a default value : 20 while really over 35
-                            minCols = -1,
-                            maxCols = -1,
-                            initialRows = textAreaElement.rows,
-                            rows = textAreaElement.rows,
-                            offsetWidth = textAreaElement.offsetWidth,
-                            previousValueInChange = '';
-
-                        if (a4p.isDefined(attrs.ngModel)) {
-                            scope.$watch(attrs.ngModel, function (value, oldValue) {
-                            	if (value == oldValue) return; // do not need change textarea size
-
-                                if ((textAreaElement.offsetHeight < textAreaElement.scrollHeight) || (textAreaElement.offsetWidth < offsetWidth)) {
-                                    // Scrollbar appears => grow
-                                    var nbLines = Math.max(rows, Math.ceil(textAreaElement.rows * textAreaElement.scrollHeight / textAreaElement.offsetHeight));
-                                    if (textAreaElement.rows < nbLines) {
-                                        textAreaElement.rows = nbLines;
-                                        if (scope.scrollRefresh) scope.scrollRefresh();
-                                    } else {
-                                        textAreaElement.rows = textAreaElement.rows + 1;
-                                        if (scope.scrollRefresh) scope.scrollRefresh();
-                                    }
-                                    // Number of cols in a textarea depends of many factors such fonts, browsers, etc...
-                                    // => we try to approximate the right cols value by registering minimas and maximas encountered
-                                    var newMinCols = Math.floor(value.length / textAreaElement.rows);
-                                    var newMaxCols = Math.ceil(value.length / textAreaElement.rows);
-                                    if ((minCols < 0) || (newMinCols < minCols)) minCols = newMinCols;
-                                    if ((maxCols < 0) || (newMaxCols > maxCols)) maxCols = newMaxCols;
-                                    previousValueInChange = value;
-                                } else if (value.length == 0) {
-                                    // Reset to initial values if empty
-                                    minCols = -1;
-                                    maxCols = -1;
-                                    textAreaElement.rows = initialRows;
-                                    if (scope.scrollRefresh) scope.scrollRefresh();
-                                    previousValueInChange = value;
-                                } else if ((value.length < (previousValueInChange.length - minCols)) || (value.length > (previousValueInChange.length + minCols))) {
-                                    // Wait for a certain amount of text before changing size
-                                    var nbLines = Math.max(rows, value.split(new RegExp("\n")).length);
-                                    var nbMinRows = nbLines;
-                                    var nbMaxRows = nbLines;
-                                    if (maxCols > 0) nbMinRows = Math.max(nbLines, Math.floor(value.length / maxCols));
-                                    if (minCols > 0) nbMaxRows = Math.max(nbLines, Math.floor(value.length / minCols));
-                                    if ((maxCols > 0) && (textAreaElement.rows < nbMinRows)) {
-                                        // Estimations say that textarea is too small
-                                        textAreaElement.rows = nbMinRows;
-                                        if (scope.scrollRefresh) scope.scrollRefresh();
-                                    } else if ((minCols > 0) && (textAreaElement.rows > nbMaxRows)) {
-                                        // Estimations say that textarea is too big
-                                        textAreaElement.rows = nbMaxRows;
-                                        if (scope.scrollRefresh) scope.scrollRefresh();
-                                    }
-                                    previousValueInChange = value;
-                                }
-                            });
-                        }
-                    }
-                }
-            }
+            compile: function(element, attrs, transclude) { return c4pInputCompile(element, attrs, transclude,$compile);}
         };
     }])
-    .directive('c4pInputDate', [function () {
+    .directive('c4pInputsimple', ["$compile", function ($compile) {
+        return {
+            restrict: 'E',
+            replace: true,
+            require: '?ngModel',
+            controller: 'c4pInputCtrl',
+            templateUrl: 'c4p/input-simple.html',
+            scope: true,// create new scope to isolate c4pInputCtrl from sibling fields
+            compile: function(element, attrs, transclude) { return c4pInputCompile(element, attrs, transclude,$compile);}
+        };
+    }])
+    .directive('c4pInputdate', [function () {
         return {
             replace: false,
             restrict: 'A',
@@ -675,7 +741,7 @@ angular.module('c4p.input', ['c4p/input.html'])
                         element.bind('click', function (event) {
                             a4p.safeApply(scope, function() {
                                 var myNewDate, value = scope.$eval(attrs.ngModel);
-                                a4p.InternalLog.log('c4pInputDate', 'Android datePicker focus : ' + attrs.ngModel + '=' + value);
+                                a4p.InternalLog.log('c4pInputdate', 'Android datePicker focus : ' + attrs.ngModel + '=' + value);
                                 if (type == 'time') {
                                     var hourS = parseInt(value.substr(0, 2)) || 0;
                                     var minuteS = parseInt(value.substr(3, 2)) || 0;
@@ -799,10 +865,15 @@ angular.module('c4p.ratings', [])
         };
     }]);
 
+/*
 directiveModule.directive('c4pBlur', function () {
+
+console.log('c4pBlur compile');
     return {
         restrict: 'A',
         link: function (scope, element, attr) {
+console.log('c4pBlur link');
+
             element.bind('blur', function () {
                 //apply scope (attributes)
                 scope.$apply(attr.c4pBlur);
@@ -810,7 +881,7 @@ directiveModule.directive('c4pBlur', function () {
         }
     };
 });
-
+*/
 
 // Check Box
 directiveModule.directive('c4pCheck', ['$parse', function ($parse) {
@@ -819,8 +890,8 @@ directiveModule.directive('c4pCheck', ['$parse', function ($parse) {
         require: 'ngModel',
         template: "" +
             "<span>" +
-            "<span class='glyphicon glyphicon-check icon-large' ng-show='model == true' ng-click='setCheck(false)'></span>" +
-            "<span class='glyphicon glyphicon-unchecked icon-large' ng-show='model != true' ng-click='setCheck(true)'></span>" +
+            "<span class='glyphicon glyphicon-check-circle-o' ng-show='model == true' ng-click='setCheck(false)'></span>" +
+            "<span class='glyphicon glyphicon-circle-o' ng-show='model != true' ng-click='setCheck(true)'></span>" +
             "</span>",
         replace: true,
         transclude: true,

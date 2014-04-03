@@ -3,7 +3,7 @@
 /**
  *
  * @param $scope
- * @param $dialog
+ * @param $modal
  * @param {Object} srvData Data service
  * @param {Object} srvFacet Facet service
  * @param {Object} srvLocale Locale service
@@ -19,27 +19,13 @@
  * @param {Function|null} createFct Function to call if user wants to create a new object of this type. This function must return a promise which gives the new object in resolve arguments.
  * @param {Object} dialog Dialog service (from ui-bootstrap)
  */
-function ctrlFacetSelectedDialog($scope, $dialog, srvData, srvFacet, srvLocale, srvConfig,
+function ctrlFacetSelectedDialog($scope, $modalInstance, srvData, srvFacet, srvLocale, srvConfig,
                                  type, initFilter, initSelector, multiple, addedOrganizers,
-                                 createFct, dialog) {
+                                 createFct) {
 
     $scope.srvLocale = srvLocale;
     $scope.type = type;
     $scope.typeColor = c4p.Model.getTypeColor(type);
-
-    /**
-     * Helpers
-     */
-
-    function promiseDialog(dialogOptions) {
-        return $dialog.dialog(dialogOptions).open();
-    }
-
-    function openDialog(dialogOptions, onSuccess) {
-        a4p.safeApply($scope, function() {
-            $dialog.dialog(dialogOptions).open().then(onSuccess);
-        });
-    }
 
     /**
      * Variables
@@ -173,14 +159,14 @@ function ctrlFacetSelectedDialog($scope, $dialog, srvData, srvFacet, srvLocale, 
                 if (!multiple) break;
             }
         }
-        dialog.close(result);
+        $modalInstance.close(result);
     };
 
     /**
      * Cancel the dialog => close the modal and return nothing
      */
     $scope.closeDialog = function () {
-        dialog.close();
+        $modalInstance.dismiss();
     };
 
     /**

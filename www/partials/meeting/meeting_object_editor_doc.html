@@ -2,15 +2,17 @@
 <div class="meeting-content">
     <div class="row">
         <div class="col-xxs-1">
-            <span>{{currentMeetingObject.pos}}.</span>
+            <!--<span>{{selectedMeetingPlan.pos+1}}.</span>-->
+            <input type="text" class="form-control" placeholder="{{selectedMeetingPlan.pos+1}}" disabled />
         </div>
         <div class="col-xxs-11">
-            <c4p-input
+            <!--<c4p-input
                     type-var="text"
                     warn-var="error"
                     title-var="Titre"
-                    ng-model="currentMeetingObject.title">
-            </c4p-input>
+                    ng-model="selectedMeetingPlan.title">
+            </c4p-input>-->
+            <input type="text" class="form-control" placeholder="todelete" ng-model="selectedMeetingPlan.title" />
         </div>
     </div>
 
@@ -19,12 +21,12 @@
              ng-show="dndActive"
              ng-controller="ctrlMeetingObjLinkDrop"
              sense-opts="{name:'dropObjectMeeting'}"
-             sense-dnd-start="dndStart($event)"
-             sense-dnd-end="dndEnd($event)"
-             sense-dnd-cancel="dndCancel($event)"
-             sense-drop-over-enter="dropOverEnter($event)"
-             sense-drop-over-leave="dropOverLeave($event)"
-             sense-drop-end="dropEnd($event)"
+             sense-dndstart="dndStart($event)"
+             sense-dndend="dndEnd($event)"
+             sense-dndcancel="dndCancel($event)"
+             sense-dropoverenter="dropOverEnter($event)"
+             sense-dropoverleave="dropOverLeave($event)"
+             sense-dropend="dropEnd($event)"
              style="background-color: rgba(0,255,0, 0.6); height: 4em; ">
              {{srvLocale.translations.htmlMeetingDropItemHere}}
         </div>

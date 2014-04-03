@@ -5,9 +5,7 @@
     "htmlGuiderTextValidation":"Synchronization is running. Please wait ...",
     "htmlGuiderTextWaiting":"<blockquote><p>Patience, persistence and perspiration make an unbeatable combination for success.</p><small>Napoleon Hill</small></blockquote>",
 
-
-
-
+    "htmlGuiderNeedHelp":"Question ?",
 
 	"htmlErrorRequired":"Field '{0}' is mandatory",
 	"htmlErrorMaxLength":"Field '{0}' must not exceed {1} characters",
@@ -24,9 +22,8 @@
     "htmlRequiredPositiveDuration":"Duration must be positive",
     "htmlInvalidEmail":"The address {0} is invalid",
     "htmlNoEmailAddr":"{0} has no email address",
-
-
-
+    "htmlTextOr":"or",
+    "htmlTextAlreadyRegistered":"already registered ?",
 
 
 	"htmlButtonRegister":"Register",
@@ -95,21 +92,17 @@
 
 
 
-    "htmlViewNrelatedPageTitle":"Relations",
+    "htmlViewNrelatedPageTitle":"Related items",
     "htmlViewNrelatedPageTitleNew":"New relations",
     "htmlViewNlinkItemTextNoRelation": "No relation! Create one using drag & drop",
     "htmlViewNlinkItemTextRemoveLink":"Remove link kind:",
-
-
-
 
 
     "htmlCardsTextActionAs":"as",
 
 
 
-
-
+    "htmlDialogTextImport":"Import...",
     "htmlDialogAddAccountPageTitle":"Account import",
     "htmlDialogAddContactPageTitle":"Contact import",
     "htmlDialogAddRatingsPluralRating":{
@@ -141,6 +134,42 @@
 	"htmlDialogPINModeDifferent":"New PIN code must be different from old one",
 
 
+    "htmlTitleNewObject":{
+        "Facet":"Tag creation",
+        "Contact":"Contact creation",
+        "Account":"Account creation",
+        "Opportunity":"Opportunity creation",
+        "Lead":"Lead creation",
+        "Event":"Event creation",
+        "Task":"Task creation",
+        "Document":"Document creation",
+        "Note":"Note creation",
+        "Report":"Report creation",
+        "Email":"Email creation",
+        "Picture":"Picture creation",
+        "Plan": "Plan creation",
+        "Attendee":"Attendee creation",
+        "Attachee": "Attachment creation",
+        "Plannee": "Point creation"
+    },
+    "htmlTitleEditObject":{
+        "Facet":"Tag edit",
+        "Contact":"Contact edit",
+        "Account":"Account edit",
+        "Opportunity":"Opportunity edit",
+        "Lead":"Lead edit",
+        "Event":"Event edit",
+        "Task":"Task edit",
+        "Document":"Document edit",
+        "Note":"Note edit",
+        "Report":"Report edit",
+        "Email":"Email edit",
+        "Picture":"Picture edit",
+        "Plan": "Plan edit",
+        "Attendee":"Attendee edit",
+        "Attachee": "Attachment edit",
+        "Plannee": "Point edit"
+    },
 
 
 
@@ -319,7 +348,8 @@
 
 
     "htmlMsgServerPb":"Server problem. Please contact admin.",
-    "htmlMsgUserLoginRequired":"User email is required or incorrect.",
+    "htmlMsgUserLoginRequired": "User email is required or incorrect.",
+    "htmlMsgUserEmailRequired": "User email is required.",
     "htmlMsgNoConnectionWithSF":"No current connection with SalesForce.",
     "htmlMsgRequestFormatInvalid":"Client software might be outdated: invalid request.",
     "htmlMsgNoMultipleRefreshForSameUser":"Another synchronization is already running for the same user.",
@@ -340,8 +370,16 @@
     "htmlMsgLoadLocaleReady":"Locale {0} ready.",
     "htmlMsgInitializingFileStorage":"Initializing File Storage with a space of {0} bytes ...",
     "htmlMsgLoadFileStoragePb":"Creation of File Storage failed. The application can not start !",
-    "htmlMsgFeedbackMessageEmpty":"Sorry, an empty feedback is not really useful !",
-    "htmlMsgFeedbackContactEmpty":"Sorry, an email address or a phone number is required to give us a chance to answer your feedback !",
+    "htmlMsgFeedbackMessageEmpty":"Your message text is empty",
+    "htmlMsgFeedbackContactEmpty":"Sorry, we need valid email",
+    "htmlMsgFeedbackEmail":"Thank you for your feedback !",
+    "htmlMsgFeedbackPhone":"If you could be join by phone", 
+    "htmlMsgFeedbackMoreObjects":"Hi!\nPlease i need more objects, like :\n ... which one ?", 
+    "htmlMsgFeedbackMoreObjectsQuestion":"... more?",
+    "htmlMsgFeedbackSFConnector":"Hi there!\nPlease connect to my Salesforce.com data.", 
+    "htmlMsgFeedbackOtherConnector":"Hi team!\nPlease connect to my CRM data :\n ... which one ? ",  
+    "htmlMsgFeedbackOtherConnectorQuestion":"Do you want to connect to your system ?",  
+    "htmlMsgFeedbackSuggestion":"Hi team!\nI need some helpfull topics like :\n ... which one ?", 
     "htmlMsgRejectImportNotLogged":"Import rejected: you are not logged in.",
     "htmlMsgImportFile":"Import of file {0}",
     "htmlMsgFileImport":"File import",
@@ -616,7 +654,8 @@
 
     "htmlTextConfirmActiveCrm":"Do you want to toggle CRM use (this will clear and reload all data):",
   	"htmlTextConfirmDelete":"Do you want to remove item(s):",
-  	"htmlTextConfirmRemoveLink":"Do you want to remove object link(s):",
+    "htmlTextConfirmRemoveLink":"Do you want to remove object link(s):", 
+    "htmlTextConfirmSwitchUser":"Are you sure to switch user ? You will loose your device data.",
 
   	"htmlTextManager":"Manager",
   	"htmlTextTeam":"Team",

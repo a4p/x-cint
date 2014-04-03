@@ -4,12 +4,12 @@
  * Meeting pane controller
  *
  * @param $scope
- * @param $dialog
+ * @param $modal
  * @param srvData
  * @param srvConfig
  * @param srvNav
  */
-function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srvAnalytics) {
+function ctrlMeeting($scope, $modal, srvData, srvConfig, srvNav, srvLocale, srvAnalytics) {
 
     /**
      * Injected Services
@@ -47,8 +47,10 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
     $scope.plans = [];
 
     $scope.viewerDocList = [];
-    $scope.currentMeetingObject = null; // selected Plan object
+    $scope.selectedMeetingPlan = null; // selected Plan object
     $scope.currentMeetingItem = null; // first Document/Note/Report linked to Plan via a Plannee
+    $scope.editorType = "Document"; //currently we have only only document editable un editor view
+
     $scope.modeEdit = false;
     $scope.meetingView = 'meetingSplitView';
 
@@ -69,8 +71,8 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
             side: 'partials/meeting/meeting_linked_object.html',
             main: 'partials/meeting/meeting_object_viewer.html'
         },
-        'select': {
-            icon: '',
+        'select': { // Drag & Drop mode
+            icon: 'link',
             side: 'partials/meeting/meeting_linked_object.html',
             main: 'partials/meeting/meeting_plan_viewer.html'
         }
@@ -124,22 +126,18 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
      * Helpers
      */
 
-    function promiseDialog(dialogOptions) {
-        return $dialog.dialog(dialogOptions).open();
-    }
-
-    function openDialog(dialogOptions, onSuccess) {
-        a4p.safeApply($scope, function () {
-            $dialog.dialog(dialogOptions).open().then(onSuccess);
-        });
-    }
 
     /**
      * Functions
      */
 
     $scope.initMeetingElements = function () {
-        srvAnalytics.add('Meeting', 'Read', '', 'Meeting', 'view');
+
+        //GA: user really interact with meeting, he shows meeting to N attendees
+        srvAnalytics.add('Once', 'Meeting Show');
+        var attendee = srvData.getTypedDirectLinks($scope.srvNav.item, 'child', 'Attendee');
+        if (attendee) srvAnalytics.add('Uses', 'Meeting Show - N',attendee.length);
+
         $scope.plans = srvData.getTypedDirectLinks($scope.srvNav.item, 'child', 'Plan');
         $scope.plans = $scope.plans.sort(function(planA, planB) {
             // sort numerically by ascending order of position attribute
@@ -149,6 +147,18 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
         for (var i = 0; i < $scope.plans.length; i++) {
             $scope.plans[i].pos = i;
         }
+
+        if ($scope.plans.length == 0) {
+            // Create a new default Note when Plan is empty
+            var note = {
+                'a4p_type' : 'Note',
+                'title': srvLocale.translations.htmlFormTitle,
+                'description': srvLocale.translations.htmlFormDescription
+            };
+            var object = $scope.addNewNote(note);
+            $scope.addMeetingElement (object);
+        }
+
     };
 
     $scope.savePlans = function (plans) {
@@ -161,7 +171,7 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
             srvData.setAndSaveObject(plans[i]);
             var plannees = srvData.getTypedDirectLinks(plans[i], 'plannee', 'Plannee');
             for (var j = 0; j < plannees.length; j++) {
-                srvData.setAndSaveObject(plannees[i]);
+                srvData.setAndSaveObject(plannees[j]);
             }
             var subPlans = srvData.getTypedDirectLinks(plans[i], 'child', 'Plan');
             subPlans = subPlans.sort(function (planA, planB) {
@@ -173,7 +183,7 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
     };
 
     $scope.windowSizeChanged = function () {
-        $scope.onePageFormat = srvConfig.c4pConfig.phoneFormatIfSmall ? a4p.Resize.resizeOneColumn : a4p.Resize.resizePortrait;
+        $scope.onePageFormat = a4p.Resize.resizePortrait; //prefer One column Mode; srvConfig.c4pConfig.phoneFormatIfSmall ? a4p.Resize.resizeOneColumn : a4p.Resize.resizePortrait;
         $scope.pageHeight = a4p.Resize.resizeHeight;
         $scope.pageWidth = a4p.Resize.resizeWidth;
         $scope.hasScroller = $scope.onePageFormat;
@@ -261,8 +271,20 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
         }
     };
 
+    $scope.tapOnLinkedObject = function (item, firstSingleTap) {
+        if (firstSingleTap) {
+            a4p.safeApply($scope, function () {
+                // To let Angular update singleTap status (chevron-right)
+            });
+            return;
+        }
+        a4p.safeApply($scope, function () {
+            $scope.setActionItem('others', 'side');
+            $scope.showDocument(item);
+        });
+    };
 
-    /**
+        /**
      *
      * @param type
      * @param part is for onePage format, give the part to update
@@ -270,8 +292,6 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
     $scope.setActionItem = function (type, part) {
         $scope.selectedActionItem = type;
         $scope.actionItem = $scope.actionItems[$scope.selectedActionItem];
-
-
         if ($scope.isOnePageFormat())
         {
             if (part == 'side'){
@@ -348,12 +368,12 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
             parent_id: $scope.srvNav.item.id,
             title: srvLocale.translations.htmlMeetingNoTitle
         });
-        if (($scope.plans.length == 0) || ($scope.currentMeetingObject == null)) {
+        if (($scope.plans.length == 0) || ($scope.selectedMeetingPlan == null)) {
             plan.pos = $scope.plans.length;
             srvData.addObject(plan);
             $scope.plans.push(plan);
         } else {
-            plan.pos = $scope.currentMeetingObject.pos + 1;
+            plan.pos = $scope.selectedMeetingPlan.pos + 1;
             srvData.addObject(plan);
             $scope.plans.splice(plan.pos, 0, plan);
             //re-index other plans
@@ -371,7 +391,12 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
     $scope.moveMeetingElement = function (plans, old_index, new_index) {
         if ((old_index >= 0) && (old_index < plans.length)) {
             var plan = plans.splice(old_index, 1)[0];
-            if (new_index > old_index) new_index--;// Take into account previous splice which removed plan from list
+            // Do not update new_index, because we WANT to insert after it if move down
+            // if (new_index > old_index) {
+                // Move down, i.e. AFTER new_index object
+            //} else {
+                // Move up, i.e. BEFORE new_index object
+            //}
             if ((new_index >= 0) && (new_index < plans.length)) {
                 plans.splice(new_index, 0, plan);
             } else {
@@ -435,13 +460,13 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
             a4p.safeApply($scope, function () {
                 if (a4p.isDefinedAndNotNull(obj)) {
                     // TODO : obj must abide c4p.Model restrictions : obj type must be Document/Note/Report
-                    $scope.currentMeetingObject.title = srvConfig.getItemName(obj);
-                    srvData.newAttachment('Plannee', obj, $scope.currentMeetingObject);
+                    $scope.selectedMeetingPlan.title = srvConfig.getItemName(obj);
+                    srvData.newAttachment('Plannee', obj, $scope.selectedMeetingPlan);
                 }
             });
         });
 
-        $scope.updateMeetingObj($scope.currentMeetingObject);
+        $scope.updateMeetingObj($scope.selectedMeetingPlan);
     };
 
     $scope.meetingTakePicture = function () {
@@ -455,7 +480,7 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
      */
     $scope.setMeetingObject = function (meetingObj) {
 
-        $scope.currentMeetingObject = meetingObj;
+        $scope.selectedMeetingPlan = meetingObj;
         if (a4p.isDefinedAndNotNull(meetingObj)){
             var plannees = srvData.getTypedDirectLinks(meetingObj, 'plannee', 'Plannee');
             // TODO : reference ALL Document/Note/Report attached to this Plan ?
@@ -489,7 +514,7 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
         if ($scope.isPresentationOn) {
             return 'presentation';
         }
-        if ($scope.currentMeetingObject != null) {
+        if ($scope.selectedMeetingPlan != null) {
             return 'editor';
         }
         return null;
@@ -519,7 +544,7 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
      */
     $scope.updateMeetingObj = function (newMeetingObject) {
 
-        if ($scope.currentMeetingObject != null) {
+        if ($scope.selectedMeetingPlan != null) {
             a4p.safeApply($scope, function() {
                 $scope.setMeetingObject(null);
             });
@@ -536,5 +561,17 @@ function ctrlMeeting($scope, $dialog, srvData, srvConfig, srvNav, srvLocale, srv
     $scope.windowSizeChanged();
     $scope.initMeetingElements();
 
+    $scope.setObjectLinkNav = function (newMeetingObject) {
+        if ($scope.selectedMeetingPlan == null)
+        {
+            $scope.setActionItem('others', 'side');
+        }
+        else {
+            $scope.setActionItem('select', 'side');
+        }
+    }
+
+
+
 }
-ctrlMeeting.$inject = ['$scope', '$dialog', 'srvData', 'srvConfig', 'srvNav', 'srvLocale', 'srvAnalytics'];
+ctrlMeeting.$inject = ['$scope', '$modal', 'srvData', 'srvConfig', 'srvNav', 'srvLocale', 'srvAnalytics'];

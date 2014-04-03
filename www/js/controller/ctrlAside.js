@@ -23,6 +23,7 @@ function ctrlAside($scope, srvFacet, srvLocale, srvData, srvAnalytics, srvNav, v
 
     $scope.rootMenuUp = true; // ((inputs.itemSearchQuery.length == 0) && (srvFacet.filterFacets.length == 0));
     $scope.activeSearch = false;
+    $scope.showGroupSuggestion = true; // show aside suggestions
 
     // Filter
     $scope.inputs = {
@@ -124,15 +125,18 @@ function ctrlAside($scope, srvFacet, srvLocale, srvData, srvAnalytics, srvNav, v
 
     $scope.selectItem = function (item) {
         a4p.InternalLog.log('ctrlAside - selectItem');
-        $scope.setItemAndGoDetail(item);
+        var closeAside = false;
         if ($scope.closeAsidePage && $scope.setNavAside) {
-            $scope.setNavAside(false);
+            closeAside = true;
+
+        $scope.setItemAndGoDetail(item,closeAside);
+        
         } else if ($scope.updateScroller) $scope.updateScroller();
     };
 
     $scope.selectItemAndCloseAside = function (item) {
-        $scope.setItemAndGoDetail(item);
-        $scope.setNavAside(false);
+        $scope.setItemAndGoDetail(item,true);
+        //$scope.setNavAside(false);
     };
 
     $scope.removeGlobalSearch = function () {
@@ -178,7 +182,7 @@ function ctrlAside($scope, srvFacet, srvLocale, srvData, srvAnalytics, srvNav, v
             else {
                 // Default object attrs
                 var itemToCreate = $scope.srvData.createObject(type, {});
-                $scope.editObjectDialog(itemToCreate).then(
+                $scope.editObjectDialog(itemToCreate,
                     function (result) {
                         if (a4p.isDefined(result)) {
                             a4p.safeApply($scope, function() {
@@ -194,9 +198,8 @@ function ctrlAside($scope, srvFacet, srvLocale, srvData, srvAnalytics, srvNav, v
                                 $scope.srvData.addObjectToSave(result.a4p_type, result.id.dbid);
                                 $scope.selectItemAndCloseAside(result);
 
-                                // GA : push object created (lead, contact, account, opportunity, note, report, calendar event)
-                                // Measures the volume of created objects + functionality usage per user
-                                srvAnalytics.add(result.a4p_type, 'Create', version, result.a4p_type, 'event');
+                                //GA: user really interact with aside, he adds one object
+                                srvAnalytics.add('Once', 'Aside - add ' + result.a4p_type);
                             });
                         }
                     }
@@ -205,20 +208,28 @@ function ctrlAside($scope, srvFacet, srvLocale, srvData, srvAnalytics, srvNav, v
         });
     };
 
+    $scope.setShowGroupSuggestion = function(b){
+
+        $scope.showGroupSuggestion = b;
+    }
+
 
     /**
      * item for root menu
      */
     $scope.activeItem='';
     $scope.setSearchMenu= function (name) {
-        $scope.inputs = {
-            itemSearchQuery : ''
-        };
-        $scope.rootMenuUp = false;
-        $scope.setNavAside(true);
-        srvFacet.clear();
-        srvFacet.addFacet('objects', srvLocale.translations.htmlTitleType[name], name);
-        $scope.activeItem=$scope.slideNavigationType[name];
+
+        a4p.safeApply($scope,function(){
+            $scope.inputs = {
+                itemSearchQuery : ''
+            };
+            $scope.rootMenuUp = false;
+            $scope.setNavAside(true);
+            srvFacet.clear();
+            srvFacet.addFacet('objects', srvLocale.translations.htmlTitleType[name], name);
+            $scope.activeItem=$scope.slideNavigationType[name];
+        }, $scope.startSpinner, $scope.stopSpinner);
     }
 
     $scope.setCalendar = function () {

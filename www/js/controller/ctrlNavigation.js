@@ -1,6 +1,6 @@
 'use strict';
 
-function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version,
+function navigationCtrl($scope, $q, $timeout, $location, $http, $modal, version,
                         srvLoad, srvLocalStorage, srvFileStorage, srvAnalytics, srvConfig,
                         srvLog, srvLocale, srvData, srvRunning, srvSecurity,
                         srvSynchro, cordovaReady, srvLink, srvNav, srvGuider, srvFacet, srvOpenUrl) {
@@ -20,7 +20,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
     /**
      * Calendar view to display as init view in app
      */
-	$scope.calendarView = 'dayView';	// 'monthView';
+	$scope.calendarView = 'monthView';	// 'monthView'; //'dayView';
 
 
     /**
@@ -34,7 +34,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
 	 * Default size values. They are recalculated during resize
 	 */
     $scope.baseMagnetWidth = 100; 	// to check if used
-    $scope.baseToolbarWidth =  80;	// left and right menu bars
+    $scope.baseToolbarWidth = 40*2;	// left and right menu bars // 40*2  cf 2.9
     $scope.basePageWidth  = 240;	// screen width
     $scope.basePageHeight = 240;	// screen height
 
@@ -141,9 +141,25 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
     $scope.firstConfigDone = false;
     $scope.rememberPassword = true;
     $scope.keepCrmLogin = false;
-    //MLE  $scope.elementsOrderByAlphabet = {'contacts' : false, 'accounts' : false, 'opportunities' : false, 'documents' : false};
+    $scope.inputHasBeenFocused = false; // prevent iOS keyboard focus/blur on input with ng-focus / ng-blur
+    
+/* not used due to plugin  window.plugins.ContactPicker
+    $scope.contactImportList = [];
+    $scope.setContactImportList = function(list) {
+        $scope.contactImportList = list;
+    };
+    $scope.getContactImportList = function () {
+        return $scope.contactImportList;
+    };
 
-
+    $scope.accountImportList = [];
+    $scope.setAccountImportList = function (list) {
+        $scope.accountImportList = list;
+    };
+    $scope.getAccountImportList = function () {
+        return $scope.accountImportList;
+    };
+    */
 
 
     /**
@@ -211,6 +227,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                 initLocalStorage($scope, deferred);
             });
             //a4p.InternalLog.log("begin url:"+$location.absUrl());
+            if (typeof StatusBar != 'undefined' && StatusBar) StatusBar.styleBlackTranslucent(); // iOS status bar
         };
         //a4pCordovaReadyAddCallback(startApplication);// Can call synchronously (if no Cordova as in Chrome, or if Cordova is already ready)
         cordovaReady(startApplication)();// We HOPE that Cordova is ready !!!!
@@ -299,19 +316,11 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
             $scope.initializationFinished = true;
 
 
-            //GA : empty queue and push messages to GA
+            //GA : empty queue and launch first event
         	srvAnalytics.run();
-
-	        // GA : check if a push has already been sent to GA for app usage
-	        if(srvLocalStorage.get('a4p.Analytics' + version, false) == false) {
-	        	// Store variable to not send push multiple times
-	        	srvLocalStorage.set('a4p.Analytics' + version, true);
-
-	        	//Send push
-	         	srvAnalytics.add('App', 'Uses', version, null, 'event');
-	         }
-
-
+            var login = srvSecurity.getA4pLogin();
+            srvAnalytics.setUid(login);
+            srvAnalytics.add('Once', 'App launched');
 
             // Start network requests from srvData
             srvData.start();
@@ -359,7 +368,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         srvSecurity.init();
 
         $scope.isDemo = srvLocalStorage.get('DemoMode', false);
-        srvAnalytics.setDemo($scope.isDemo);
+        //?? srvAnalytics.setEnabled(($scope.isDemo != true));
         //MLE $scope.elementsOrderByAlphabet = srvLocalStorage.get('elementsOrderByAlphabet', {'contacts' : false, 'accounts' : false, 'opportunities' : false, 'documents' : false});
         $scope.firstConfigDone = srvLocalStorage.get('FirstConfigDone', false);
         $scope.rememberPassword = srvLocalStorage.get('RememberPassword', true);
@@ -406,7 +415,6 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
             // reset user identity
             srvSecurity.setDemo();
         }
-        srvAnalytics.setDemo(isDemo);
 
         //Force download & refresh : do not use $scope.refreshClient();
         return $scope.downloadClient();
@@ -503,6 +511,11 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
     };
 
     $scope.gotoWelcome = function () {
+
+        //GA : reset User ID
+        var login = srvSecurity.getA4pLogin();
+        srvAnalytics.setUid(login);
+
         $scope.gotoSlide($scope.pageNavigation, $scope.slideNavigationCalendar);
     };
 
@@ -513,9 +526,8 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         } else if(!item || (item.a4p_type != 'Event')) {
             $scope.openDialog(
                 {
-                    backdropClick: false,
-                    dialogClass: 'modal c4p-modal-goto-meeting',
-                    backdropClass: 'modal-backdrop c4p-modal-goto-meeting',
+                    backdrop: false,
+                    windowClass: 'modal c4p-modal-small c4p-modal-goto-meeting',
                     controller: 'ctrlGoToMeetingDialog',
                     templateUrl: 'partials/dialog/dialogGoToMeeting.html',
                     resolve: {
@@ -557,69 +569,43 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
 
     // Spinner functions
 
-    $scope.spinner = null;
-    $scope.spinnerOpts = null;
     $scope.spinnerContainer = null;
-    $scope.spinnerCnt = 0;
     $scope.setSpinner = function (spinnerContainer) {
 
         $scope.spinnerContainer = spinnerContainer;
-        /*
-         $scope.spinnerOpts = {
-             lines: 12,            // The number of lines to draw
-             length: 40,            // The length of each line
-             width: 10,             // The line thickness
-             radius: 30,           // The radius of the inner circle
-             rotate: 0,            // Rotation offset
-             corners: 1,           // Roundness (0..1)
-             color: '#000',        // #rgb or #rrggbb
-             direction: 1,         // 1: clockwise, -1: counterclockwise
-             speed: 1,             // Rounds per second
-             trail: 40,           // Afterglow percentage
-             opacity: 1/4,         // Opacity of the lines
-             fps: 20,              // Frames per second when using setTimeout()
-             zIndex: 2e9,          // Use a high z-index by default
-             className: 'a4p-spin', // CSS class to assign to the element
-             top: 'auto',          // center vertically
-             left: 'auto',         // center horizontally
-             position: 'relative'  // element position
-         };
-         $scope.spinner = new Spinner($scope.spinnerOpts);
-         */
     };
     $scope.startSpinner = function () {
-        if ($scope.spinnerContainer != null) {
-            //$scope.spinnerContainer.style['zIndex'] = 1050;
+
+        console.log('startSpinner !');
+        /*if (a4p.isDefined(window.plugins.spinnerDialog)) {
+            window.plugins.spinnerDialog.show();
+        } else if (typeof window.spinnerplugin != 'undefined' && a4p.isDefined(window.spinnerplugin)) {
+            window.spinnerplugin.show({
+                overlay: true, // defaults to true
+                timeout: 3     // defaults to 0 (no timeout)
+            });
+        } else */if ($scope.spinnerContainer != null) {
+            //$scope.spinnerContainer.style['zIndex'] = -1;
             $scope.spinnerContainer.style['display'] = '';
+            var iconToSpin = $($scope.spinnerContainer).find('.has-to-spin');
+            if (iconToSpin) iconToSpin.addClass('glyphicon-spin');
         }
-
-        /* old code
-
-         if ($scope.spinner) {
-             $scope.spinnerCnt++;
-
-             if ($scope.spinnerCnt == 1) {
-                 $scope.spinner.opts.top = (a4p.Resize.resizeHeight>>1) - $scope.spinnerOpts.length - $scope.spinnerOpts.radius;
-                 $scope.spinner.opts.left = (a4p.Resize.resizeWidth>>1) - $scope.spinnerOpts.length - $scope.spinnerOpts.radius;
-                 $scope.spinner.spin($scope.spinnerContainer);
-                 $scope.spinnerContainer.style['zIndex'] = 1050;
-             }
-         }
-         */
     };
     $scope.stopSpinner = function () {
-        if ($scope.spinnerContainer != null) {
+
+        console.log('stopSpinner !');
+        /*if (a4p.isDefined(window.plugins.spinnerDialog)) {
+            window.plugins.spinnerDialog.hide();
+        } else if (typeof window.spinnerplugin != 'undefined' && a4p.isDefined(window.spinnerplugin)) {
+            window.spinnerplugin.hide();
+        } else*/ if ($scope.spinnerContainer != null) {
             //$scope.spinnerContainer.style['zIndex'] = -1;
-            $scope.spinnerContainer.style['display'] = 'none';
+            $timeout(function(){
+                $scope.spinnerContainer.style['display'] = 'none';
+                var iconToSpin = $($scope.spinnerContainer).find('.has-to-spin');
+                if (iconToSpin) iconToSpin.removeClass('glyphicon-spin');
+            },500);
         }
-        /*
-         if ($scope.spinner) {
-             $scope.spinnerCnt--;
-             if ($scope.spinnerCnt <= 0) {
-                 $scope.spinner.stop();
-                 $scope.spinnerContainer.style['zIndex'] = -1;
-             }
-         }*/
     };
 
     // Synchronization functions
@@ -661,14 +647,14 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         //a4p.InternalLog.log('beginSynchronization');
     	srvRunning.setRefresh(true);
         scope.setA4pSpinnerState('run');
-        //$scope.startSpinner();
+        $scope.startSpinner();
     }
 
     function endSynchronization(scope) {
         //a4p.InternalLog.log('endSynchronization');
     	srvRunning.setRefresh(false);
         scope.setA4pSpinnerState('done');
-        //$scope.stopSpinner();
+        $scope.stopSpinner();
 
         // TODO : move logSuccess() and gotoWelcome() out of this function
         srvLog.logSuccess(true, srvLocale.translations.htmlMsgSynchronizationOK,
@@ -989,6 +975,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
     	}
 
         $scope.updateScroller();
+        $scope.stopSpinner();
     };
 
     $scope.getSlide = function() {
@@ -1264,12 +1251,13 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         fontSizePxHtml = fontSizePxHtml.substr(0, fontSizePxHtml.length-2);
 
         if (srvConfig.getSizeCss() == '') {
-            srvConfig.setSizeCss(fontSizePxHtml+'px');
+            //srvConfig.setSizeCss(fontSizePxHtml+'px');
+            srvConfig.setSizeCss('75%');
         }
 
-        $scope.toolbarWidth = Math.ceil(2.9*fontSizePx);
+        $scope.toolbarWidth = Math.ceil(2.9*fontSizePx);//2.9 cf 40*2
 
-        $scope.onePageFormat = srvConfig.c4pConfig.phoneFormatIfSmall ? a4p.Resize.resizeOneColumn : a4p.Resize.resizePortrait;
+        $scope.onePageFormat = a4p.Resize.resizePortrait; //prefer One column Mode; srvConfig.c4pConfig.phoneFormatIfSmall ? a4p.Resize.resizeOneColumn : a4p.Resize.resizePortrait;
         $scope.pageHeight = a4p.Resize.resizeHeight;
         $scope.pageWidth = a4p.Resize.resizeWidth;
 
@@ -1339,10 +1327,10 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
     };
 
 
-    $scope.closeAsidePage = false;// Config
+    $scope.closeAsidePage = false;// Config - ?? used for what reason ?
     $scope.navPage = 1;
     $scope.navRelated = false;
-    $scope.navAside = true;
+    $scope.navAside = false; // Aside menu visible by default
 
     $scope.toggleNavRelated = function() {
         $scope.setNavRelated(!$scope.navRelated);
@@ -1463,10 +1451,23 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
     	alert('TEST MLE redefine in sub controller ?'+type);
     };
 
-    $scope.setItemAndGoDetail = function(item) {
+    $scope.setItemAndGoDetail = function(item, closeAside) {
 
-        $scope.startSpinner();
+        
+        //window.setTimeout(function () {
+            $scope.startSpinner();
+            $timeout(function () {
+                if (item) {
+                    srvNav.goto($scope.pageNavigation, $scope.slideNavigationType[item.a4p_type], item);
+                }
+                $scope.gotoSlide($scope.pageNavigation, $scope.slideNavigationType[item.a4p_type]);
+                if (item) $scope.$broadcast('setItemDetail', item);
 
+                if (closeAside) $scope.setNavAside(false);
+
+            },1);
+       // }, 200);
+        /*
         $timeout(function () {
             if (item) {
                 srvNav.goto($scope.pageNavigation, $scope.slideNavigationType[item.a4p_type], item);
@@ -1474,10 +1475,18 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
             $scope.gotoSlide($scope.pageNavigation, $scope.slideNavigationType[item.a4p_type]);
             if (item) $scope.$broadcast('setItemDetail', item);
         }, 200 );
+        */
 
+        /*window.setTimeout(function () {
+            a4p.safeApply($scope, function () {
+                $scope.stopSpinner();
+            });
+        }, 1000);*/
+        /*
         $timeout(function () {
             $scope.stopSpinner();
         }, 1000);
+        */
 
     };
 
@@ -1618,13 +1627,13 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
      */
 
     $scope.promiseDialog = function (dialogOptions) {
-        return $dialog.dialog(dialogOptions).open();
+        return $modal.open(dialogOptions).result;
     };
 
     $scope.openDialog = function (dialogOptions, onSuccess) {
         a4p.safeApply($scope, function() {
         	$scope.setBlur(true);
-            $dialog.dialog(dialogOptions).open().then(
+            $modal.open(dialogOptions).result.then(
             	function(result) {
             		onSuccess(result);
             		$scope.setBlur(false);
@@ -1638,9 +1647,8 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
     $scope.openDialogConfirm = function (text, array, fctConfirm) {
         $scope.openDialog(
             {
-                backdropClick: false,
-                dialogClass: 'modal c4p-modal-confirm',
-                backdropClass: 'modal-backdrop c4p-modal-confirm',
+                backdrop: false,
+                windowClass: 'modal c4p-modal-full c4p-modal-confirm',
                 controller: 'ctrlDialogConfirm',
                 templateUrl: 'partials/dialog/confirm.html',
                 resolve: {
@@ -1666,9 +1674,8 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         //fctSuccess
         $scope.openDialog(
             {
-                backdropClick: false,
-                dialogClass: 'modal c4p-modal-confirm',
-                backdropClass: 'modal-backdrop c4p-modal-confirm',
+                backdrop: false,
+                windowClass: 'modal c4p-modal-small c4p-modal-confirm',
                 controller: 'ctrlInitDialogPinCode',
                 templateUrl: 'partials/dialog/pin_init.html',
                 resolve: {
@@ -1687,9 +1694,8 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
     $scope.openDialogModifyPinCode = function (fctSuccess) {
         $scope.openDialog(
             {
-                backdropClick: false,
-                dialogClass: 'modal c4p-modal-confirm',
-                backdropClass: 'modal-backdrop c4p-modal-confirm',
+                backdrop: false,
+                windowClass: 'modal c4p-modal-small c4p-modal-confirm',
                 controller: 'ctrlModifyDialogPinCode',
                 templateUrl: 'partials/dialog/pin_modify.html',
                 resolve: {
@@ -1713,9 +1719,8 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
     $scope.openDialogLocked = function (fctSuccess) {
         $scope.openDialog(
             {
-                backdropClick: false,
-                dialogClass: 'modal c4p-modal-confirm',
-                backdropClass: 'modal-backdrop c4p-modal-confirm',
+                backdrop: false,
+                windowClass: 'modal c4p-modal-small c4p-modal-confirm',
                 controller: 'ctrlOpenDialogLocked',
                 templateUrl: 'partials/dialog/pin_locked.html',
                 resolve: {
@@ -1741,9 +1746,8 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
     $scope.openDialogMessage = function (text) {
         $scope.openDialog(
             {
-                backdropClick: true,
-                dialogClass: 'modal c4p-modal-confirm',
-                backdropClass: 'modal-backdrop c4p-modal-confirm',
+                backdrop: true,
+                windowClass: 'modal c4p-modal-small c4p-modal-confirm',
                 controller: 'ctrlDialogConfirm',
                 templateUrl: 'partials/dialog/message.html',
                 resolve: {
@@ -1768,7 +1772,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         $scope.openDialog(
             {
                 backdrop: false,
-                dialogClass: 'modal',
+                windowClass: 'modal c4p-modal-full c4p-modal-image',
                 controller: 'ctrlShowImage',
                 templateUrl: 'partials/dialog/dialogShowImage.html',
                 resolve: {
@@ -1782,11 +1786,11 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
             });
     };
 
-    $scope.editObjectDialog = function(event) {
-        return $scope.promiseDialog(
+    $scope.editObjectDialog = function(event, fctSuccess) {
+        return $scope.openDialog(
             {
                 backdrop: false,
-                dialogClass: 'modal c4p-dialog c4p-modal-full',
+                windowClass: 'modal c4p-modal-large c4p-dialog',
                 controller: 'ctrlEditDialogObject',
                 templateUrl: 'partials/dialog/edit_object.html',
                 resolve: {
@@ -1808,7 +1812,28 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                             srvData.removeAndSaveObject(obj);
                             $scope.gotoBack(0);
                         };
+                    },
+                    startSpinner: function () {
+                        return $scope.startSpinner;
+                    },
+                    stopSpinner: function () {
+                        return $scope.stopSpinner;
+                    },
+                    openDialogFct: function () {
+                        return $scope.openDialog;
                     }
+                }
+            },
+            function (result) {
+                if (a4p.isDefined(result)) {
+                    a4p.safeApply($scope, function () {
+                        fctSuccess(result);
+                    });
+                }
+                else {
+                   // a4p.safeApply($scope, function() {
+                        //deferred.reject({error:'htmlMsgShareByEmailPb', log:'cancelled by user'});
+                    //});
                 }
             });
     };
@@ -1830,9 +1855,8 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                 srvData.addObjectToSave(document.a4p_type, document.id.dbid);
                 //$scope.selectItemAndCloseAside(document);
 
-                // GA : push object created (lead, contact, account, opportunity, note, report, calendar event)
-                // Measures the volume of created objects + functionality usage per user
-                srvAnalytics.add(document.a4p_type, 'Create', version, document.a4p_type, 'event');
+                //GA: user really interact with creation
+                srvAnalytics.add('Once', 'Create '+document.a4p_type);
 
                 deferred.resolve(document);
             });
@@ -1855,8 +1879,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         };
         $scope.openDialog(
             {
-                dialogClass: 'modal c4p-modal-full c4p-dialog',
-                backdrop: false,
+                windowClass: 'modal c4p-modal-full c4p-dialog',
                 controller: 'ctrlEditDialogNote',
                 templateUrl: 'partials/dialog/dialogNote.html',
                 resolve: {
@@ -1889,6 +1912,12 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                     },
                     modeEdit: function () {
                         return true;
+                    },
+                    spinner: function () {
+                        return $scope.spinnerContainer;
+                    },
+                    openDialogFct: function () {
+                        return $scope.openDialog;
                     }
                 }
             },
@@ -1952,8 +1981,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         };
         $scope.openDialog(
             {
-                dialogClass: 'modal c4p-modal-full c4p-dialog',
-                backdrop: false,
+                windowClass: 'modal c4p-modal-full c4p-dialog',
                 controller: 'ctrlEditDialogNote',
                 templateUrl: 'partials/dialog/dialogNote.html',
                 resolve: {
@@ -1986,6 +2014,12 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                     },
                     modeEdit: function () {
                         return true;
+                    },
+                    spinner: function () {
+                        return $scope.spinnerContainer;
+                    },
+                    openDialogFct: function () {
+                        return $scope.openDialog;
                     }
                 }
             },
@@ -2026,12 +2060,15 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
     };
 
 
-    $scope.openDialogSendFeedback = function(title) {
+    $scope.openDialogSendFeedbackReport = function (title, praiseCode, praiseText) {
+
+        //GA: user praise for func
+        if (praiseCode) srvAnalytics.add('Once', 'Interest in '+praiseCode);
+
         $scope.openDialog(
             {
-                backdropClick: false,
-                dialogClass: 'modal modal-full c4p-dialog-feedback',
-                backdropClass: 'modal-backdrop c4p-modal-note',
+                backdrop: true,
+                windowClass: 'modal c4p-modal-large c4p-dialog',
                 controller: 'ctrlEditDialogFeedback',
                 templateUrl: 'partials/dialog/dialogFeedback.html',
                 resolve: {
@@ -2040,6 +2077,122 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                     },
                     title: function () {
                         return title;
+                    },
+                    message: function () {
+                        return praiseText ||'';
+                    },
+                    onlyFeedback: function () {
+                        var onlyFeedback = ((typeof praiseCode != 'undefined') && (praiseCode)) ? true : false;
+                        return onlyFeedback;
+                    },
+                    emailRequired: function () {
+                        return ((srvSecurity.getA4pLogin() || $scope.isDemo) ? false : true);
+                    }
+                }
+            },
+            function (result) {
+                if (a4p.isDefined(result)) {
+                    if (!result.feedback.message) {
+                        alert(srvLocale.translations['htmlMsgFeedbackMessageEmpty']);
+                        return;
+                    }
+                    if (!srvSecurity.getA4pLogin()) {
+                        if ((a4p.isUndefined(result.feedback.email) || (result.feedback.email == ''))
+                            && (a4p.isUndefined(result.feedback.phone) || (result.feedback.phone == ''))) {
+                            alert(srvLocale.translations['htmlMsgFeedbackContactEmpty']);
+                            return;
+                        }
+                        srvSecurity.setA4pLogin(result.feedback.email);
+                    }
+                    var fctOnHttpSuccess = function (response) {
+                        //response.data, response.status, response.headers
+                        var requestTitle = 'User feedback';
+                        if (a4p.isUndefined(response.data)) {
+                            srvLog.logWarning(true,
+                                'Received no data', requestTitle);
+                        } else {
+                            var errorCode = response.data['error'];
+                            var responseOk = response.data['responseOK'];
+                            var responseLog = response.data['responseLog'];
+                            if (a4p.isUndefined(responseLog)) responseLog = response.data['log'];
+
+                            if (a4p.isDefined(errorCode) && (errorCode != '')) {
+                                if (a4p.isUndefined(srvLocale.translations[errorCode])) {
+                                    srvLog.logWarning(true,
+                                        'Received error code ' + errorCode,
+                                        requestTitle + ' : ' + (responseLog || a4pDumpData(responseData, 1)));
+                                } else {
+                                    srvLog.logWarning(true,
+                                        srvLocale.translations[errorCode],
+                                        requestTitle + ' : ' + responseLog);
+                                }
+                            } else if (a4p.isUndefined(responseOk) || !responseOk) {
+                                srvLog.logWarning(true,
+                                    'Received no OK',
+                                    requestTitle + ' : ' + (responseLog || a4pDumpData(response.data, 1)));
+                            } else {
+                                //feedback success
+                                srvLog.logSuccess(true,
+                                    'Your feedback has been sent',
+                                    requestTitle + ' : ' + responseLog);
+                            }
+                        }
+                    };
+
+                    var fctOnHttpError = function (response) {
+                        //response = {data:msg, status:'error'}
+                        srvLog.logWarning(true,
+                            'Your feedback has failed', response.data);
+                    };
+
+                    var params = {
+                        email: srvSecurity.getA4pLogin(),
+                        title: title,
+                        c4pBuildDate: srvConfig.c4pBuildDate,
+                        language: srvLocale.getLanguage(),
+                        appVersion: $scope.version,
+                        feedback: result.feedback.message,
+                        logs: srvLog.getInternalLog(),
+                        errors: srvLog.getErrorLog()
+                    };
+                    /*
+                     srvDataTransfer.sendData(srvConfig.c4pUrlFeedbackReport, params, null, 30000)
+                     .then(fctOnHttpSuccess, fctOnHttpError);
+                     */
+                    var requestCtx = {
+                        type: 'Feedback Report',
+                        title: 'Send user feedback report'
+                    };
+                    srvSynchro.addRequest('config', requestCtx, srvConfig.c4pUrlFeedbackReport, 'POST',
+                        params, {'Content-Type': 'application/x-www-form-urlencoded'});
+                }
+            });
+    };
+
+/*
+    $scope.openDialogSendFeedback = function (title, praiseCode, praiseText) {
+
+        //GA: user praise for func
+        if (praiseCode) srvAnalytics.add('Once', 'Interest in '+praiseCode);
+
+        $scope.openDialog(
+            {
+                backdrop: true,
+                windowClass: 'modal c4p-modal-large c4p-dialog',
+                controller: 'ctrlEditDialogFeedback',
+                templateUrl: 'partials/dialog/dialogFeedback.html',
+                resolve: {
+                    srvLocale: function () {
+                        return srvLocale;
+                    },
+                    title: function () {
+                        return title ||'';
+                    },
+                    message: function () {
+                        return praiseText ||'';
+                    },
+                    onlyFeedback: function () {
+                        return (typeof praiseCode != 'undefined' && praiseCode);
                     },
                     emailRequired: function () {
                         return (srvSecurity.getA4pLogin() ? false : true);
@@ -2076,7 +2229,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                                 if (a4p.isUndefined(srvLocale.translations[errorCode])) {
                                     srvLog.logWarning(srvConfig.c4pConfig.exposeUserFeedback,
                                         'Received error code ' + errorCode,
-                                        requestTitle + ' : ' + (responseLog||a4pDumpData(responseData, 1)));
+                                        requestTitle + ' : ' + (responseLog || a4pDumpData(responseData, 1)));
                                 } else {
                                     srvLog.logWarning(srvConfig.c4pConfig.exposeUserFeedback,
                                         srvLocale.translations[errorCode],
@@ -2085,7 +2238,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                             } else if (a4p.isUndefined(responseOk) || !responseOk) {
                                 srvLog.logWarning(srvConfig.c4pConfig.exposeUserFeedback,
                                     'Received no OK',
-                                    requestTitle + ' : ' + (responseLog||a4pDumpData(response.data, 1)));
+                                    requestTitle + ' : ' + (responseLog || a4pDumpData(response.data, 1)));
                             } else {
                                 //feedback success
                                 srvLog.logSuccess(srvConfig.c4pConfig.exposeUserFeedback,
@@ -2117,8 +2270,8 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                     }
                     var params = {
                         login: srvSecurity.getA4pLogin(),
-                        title:title,
-                        phone: result.feedback.phone||'',
+                        title: title,
+                        phone: result.feedback.phone || '',
                         deviceName: deviceName,
                         deviceCordova: deviceCordova,
                         devicePlatform: devicePlatform,
@@ -2126,23 +2279,23 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                         deviceVersion: deviceVersion,
                         c4pBuildDate: srvConfig.c4pBuildDate,
                         language: srvLocale.getLanguage(),
-                        appVersion:$scope.version,
-                        feedback:result.feedback.message
+                        appVersion: $scope.version,
+                        feedback: result.feedback.message
                     };
-                    /*
-                    srvDataTransfer.sendData(srvConfig.c4pUrlFeedback, params, null, 30000)
-                        .then(fctOnHttpSuccess, fctOnHttpError);
-                    */
+                    
+                    // srvDataTransfer.sendData(srvConfig.c4pUrlFeedback, params, null, 30000)
+                    // .then(fctOnHttpSuccess, fctOnHttpError);
+                     
                     var requestCtx = {
-                        type:'Feedback',
-                        title:'Send user feedback'
+                        type: 'Feedback',
+                        title: 'Send user feedback'
                     };
                     srvSynchro.addRequest('config', requestCtx, srvConfig.c4pUrlFeedback, 'POST',
                         params, {'Content-Type': 'application/x-www-form-urlencoded'});
                 }
             });
     };
-
+*/
     $scope.removeItemDialog = function(object) {
         if (!object) {
             object = srvNav.item;
@@ -2267,9 +2420,8 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         srvData.linkToItem(document.a4p_type, 'parent', [document], parent);
         srvData.addObjectToSave(document.a4p_type, document.id.dbid);
 
-        // GA : push object created (lead, contact, account, opportunity, note, report, calendar event)
-        // Measures the volume of created objects + functionality usage per user
-        srvAnalytics.add(document.a4p_type, 'Create', version, document.a4p_type, 'event');
+        //GA: user really interact with creation
+        srvAnalytics.add('Once', 'Create '+document.a4p_type);
 
         return document;
     };
@@ -2288,9 +2440,8 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         srvData.linkToItem(document.a4p_type, 'parent', [document], parent);
         srvData.addObjectToSave(document.a4p_type, document.id.dbid);
 
-        // GA : push object created (lead, contact, account, opportunity, note, report, calendar event)
-        // Measures the volume of created objects + functionality usage per user
-        srvAnalytics.add(document.a4p_type, 'Create', version, document.a4p_type, 'event');
+        //GA: user really interact with creation
+        srvAnalytics.add('Once', 'Create '+document.a4p_type);
 
         return document;
     };
@@ -2315,7 +2466,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         $scope.openDialog(
             {
                 backdrop: false,
-                dialogClass: 'modal modal-full c4p-modal-mail c4p-dialog',
+                windowClass: 'modal c4p-modal-full c4p-modal-mail c4p-dialog',
                 controller: 'ctrlEditDialogEmail',
                 templateUrl: 'partials/dialog/dialogEmail.html',
                 resolve: {
@@ -2359,15 +2510,17 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                     },
                     modeEdit: function () {
                         return true;
+                    },
+                    openDialogFct: function () {
+                        return $scope.openDialog;
                     }
                 }
             },
             function (result) {
                 if (a4p.isDefined(result)) {
 
-                	// GA : push mail created
-                	// Measures the volume of created emails + mail functionality usage per user
-    	         	srvAnalytics.add('Mail', 'Send', version, 'Mail', 'event');
+                    //GA: user really interact with creation
+                    srvAnalytics.add('Once', 'Create Mail');
 
                     a4p.safeApply($scope, function() {
                         var document = $scope.addEmailToParent(item, true, result, parent);
@@ -2405,7 +2558,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         $scope.openDialog(
             {
                 backdrop: false,
-                dialogClass: 'modal c4p-modal-full c4p-modal-mail c4p-dialog',
+                windowClass: 'modal c4p-modal-full c4p-modal-mail c4p-dialog',
                 controller: 'ctrlEditDialogFeed',
                 templateUrl: 'partials/dialog/dialogFeed.html',
                 resolve: {
@@ -2465,10 +2618,10 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         };
         var title;
         if (item.email.emailType == 'share') {
-            dialogOptions.dialogClass = 'modal modal-full c4p-modal-mail c4p-dialog';
+            dialogOptions.windowClass = 'modal c4p-modal-full c4p-modal-mail c4p-dialog';
             title = srvLocale.translations.htmlTitleShareByEmail;
         } else {
-            dialogOptions.dialogClass = 'modal modal-full c4p-modal-mail c4p-dialog';
+            dialogOptions.windowClass = 'modal c4p-modal-full c4p-modal-mail c4p-dialog';
             title = srvLocale.translations.htmlFormEmail;
         }
         $scope.openDialog(
@@ -2520,6 +2673,9 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                     },
                     modeEdit: function () {
                         return false;
+                    },
+                    openDialogFct: function () {
+                        return $scope.openDialog;
                     }
                 }
             }),
@@ -2539,7 +2695,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         var editable = true;
         $scope.openDialog(
             {
-                dialogClass: 'modal c4p-modal-full c4p-dialog',
+                windowClass: 'modal c4p-modal-full c4p-dialog',
                 backdrop: false,
                 controller: 'ctrlEditDialogNote',
                 templateUrl: 'partials/dialog/dialogNote.html',
@@ -2582,6 +2738,12 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
                     },
                     modeEdit: function () {
                         return modeEdit;
+                    },
+                    spinner: function () {
+                        return $scope.spinnerContainer;
+                    },
+                    openDialogFct: function () {
+                        return $scope.openDialog;
                     }
                 }
             },
@@ -2684,7 +2846,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
         $scope.openDialog(
             {
                 backdrop: false,
-                dialogClass: 'modal',
+                windowClass: 'modal c4p-modal-full c4p-modal-image',
                 controller: 'ctrlShowImage',
                 templateUrl: 'partials/dialog/dialogShowImage.html',
                 resolve: {
@@ -2736,8 +2898,23 @@ function navigationCtrl($scope, $q, $timeout, $location, $http, $dialog, version
     	$scope.isBlurOn = isBlur;
     };
 
+
+    $scope.setInputFocusState = function(f){
+        $scope.inputHasBeenFocused = (f == true); 
+
+        // prevent ios bug (keyboard) fixed pb
+        // cf. http://stackoverflow.com/questions/7970389/ios-5-fixed-positioning-and-virtual-keyboard
+        if (!$scope.inputHasBeenFocused) {
+            $(window).scrollTop(0);
+            console.log('scrollTop');
+        }
+    };
+    $scope.getInputFocusState = function(){
+        return ($scope.inputHasBeenFocused == true); 
+    };
+
 }
-navigationCtrl.$inject = ['$scope', '$q', '$timeout', '$location', '$http', '$dialog', 'version',
+navigationCtrl.$inject = ['$scope', '$q', '$timeout', '$location', '$http', '$modal', 'version',
     'srvLoad', 'srvLocalStorage', 'srvFileStorage', 'srvAnalytics', 'srvConfig',
     'srvLog', 'srvLocale', 'srvData', 'srvRunning', 'srvSecurity',
     'srvSynchro', 'cordovaReady', 'srvLink', 'srvNav', 'srvGuider', 'srvFacet', 'srvOpenUrl'];

@@ -39,6 +39,7 @@ var SrvConfig = (function() {
         this.c4pUrlSfUpdate = this.c4pUrlBase + "/c4p_update.php";
         this.c4pUrlSfDelete = this.c4pUrlBase + "/c4p_delete.php";
         this.c4pUrlErrorReport = this.c4pUrlBase + "/c4p_errorReport.php";
+        this.c4pUrlFeedbackReport = this.c4pUrlBase + "/c4p_feedbackReport.php";
         this.c4pUrlFeedback = this.c4pUrlBase + "/c4p_feedback.php";
         this.c4pUrlDownload = this.c4pUrlBase + "/c4p_download.php";
         this.c4pUrlPing = this.c4pUrlBase + "/c4p_ping.php";
@@ -57,7 +58,6 @@ var SrvConfig = (function() {
         this.initBetaOptions();
 
         this.env = 'P';
-        srvAnalytics.setEnv(this.env);
         this.initDone = false;
     }
 
@@ -91,6 +91,11 @@ var SrvConfig = (function() {
             //$('html').css('font-size', this.sizeCss);
         }
         this.themeCss = this.srvLocalStorage.get('ThemeCss', 'c4p-cosmo');
+
+        //TODO app version (Free, Premium, SF ...)
+        var appVersion = this.activeCrms.length > 1 ? 'Premium' : 'Free';
+        //GA : set Version ID
+        this.srvAnalytics.setVid(this.c4pBuildDate+' '+this.env+' '+appVersion);
 
         this.initDone = true;
         a4p.InternalLog.log('srvConfig', "initialized");
@@ -136,6 +141,12 @@ var SrvConfig = (function() {
                 a4p.InternalLog.log('srvConfig', 'trustAllHosts='+response.data.trustAllHosts);
                 self.setTrustAllHosts(response.data.trustAllHosts);
             }
+
+            //TODO app version (Free, Premium, SF ...)
+            var appVersion = self.activeCrms.length > 1 ? 'Premium' : 'Free';
+            //GA : set Version ID
+            self.srvAnalytics.setVid(self.c4pBuildDate+' '+self.env+' '+appVersion);
+
             callback();
         };
         var onFailure = function (response) {
@@ -229,6 +240,7 @@ var SrvConfig = (function() {
         this.c4pUrlSfUpdate = this.c4pUrlBase + "/c4p_update.php";
         this.c4pUrlSfDelete = this.c4pUrlBase + "/c4p_delete.php";
         this.c4pUrlErrorReport = this.c4pUrlBase + "/c4p_errorReport.php";
+        this.c4pUrlFeedbackReport = this.c4pUrlBase + "/c4p_feedbackReport.php";
         this.c4pUrlFeedback = this.c4pUrlBase + "/c4p_feedback.php";
         this.c4pUrlDownload = this.c4pUrlBase + "/c4p_download.php";
         this.c4pUrlPing = this.c4pUrlBase + "/c4p_ping.php";
@@ -261,7 +273,9 @@ var SrvConfig = (function() {
         } else {
             this.env = 'P';
         }
-        this.srvAnalytics.setEnv(this.env);
+
+        //TODO MLE ??? if (this.env != 'P') {this.srvAnalytics.setEnable(false);} //GA only in PROD env
+
         this.srvLocalStorage.set('UrlBase', this.c4pUrlBase);
     };
 

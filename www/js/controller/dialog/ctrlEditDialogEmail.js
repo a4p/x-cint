@@ -1,19 +1,9 @@
 'use strict';
 
-function ctrlEditDialogEmail($scope, srvLocale, srvData, srvConfig, srvFacet, title, attendees, attachments, email, emailId, editable, modeEdit, $dialog, dialog) {
+function ctrlEditDialogEmail($scope, srvLocale, srvData, srvConfig, srvFacet, title, attendees, attachments, email, emailId, editable, modeEdit, openDialogFct, $modal, dialog) {
     /**
      * Helpers
      */
-
-    function promiseDialog(dialogOptions) {
-        return $dialog.dialog(dialogOptions).open();
-    }
-
-    function openDialog(dialogOptions, onSuccess) {
-        a4p.safeApply($scope, function() {
-            $dialog.dialog(dialogOptions).open().then(onSuccess);
-        });
-    }
 
     /**
      * Variables
@@ -24,6 +14,7 @@ function ctrlEditDialogEmail($scope, srvLocale, srvData, srvConfig, srvFacet, ti
     $scope.editable = editable;
     $scope.emailInput = '';
     $scope.errorMap = {};
+    $scope.openDialogFct = openDialogFct;
 
     /**
      * Functions
@@ -100,9 +91,8 @@ function ctrlEditDialogEmail($scope, srvLocale, srvData, srvConfig, srvFacet, ti
         });
         addedOrganizers.push(srvFacet.createEventAttendeesOrganizer(attendees));
         var dialogOptions = {
-            backdropClick: false,
-            dialogClass: 'modal modal-left c4p-modal-search c4p-dialog',
-            backdropClass: 'modal-backdrop c4p-modal-search-backdrop'
+            backdrop: false,
+            windowClass: 'modal c4p-modal-left c4p-modal-search c4p-dialog'
         };
         var resolve = {
             srvData: function () {
@@ -149,7 +139,7 @@ function ctrlEditDialogEmail($scope, srvLocale, srvData, srvConfig, srvFacet, ti
             resolve.suggestedMenus = function () { return menus; };
         }
         dialogOptions.resolve = resolve;
-        openDialog(dialogOptions, function (result) {
+        $scope.openDialogFct(dialogOptions, function (result) {
             if (a4p.isDefined(result)) {
                 a4p.safeApply($scope, function () {
                     // Synchronize $scope.note.contacts and $scope.contacts
@@ -181,9 +171,8 @@ function ctrlEditDialogEmail($scope, srvLocale, srvData, srvConfig, srvFacet, ti
         });
         addedDocuments.push(srvFacet.createEventAttachmentsOrganizer(attachments));
         var dialogOptions = {
-            backdropClick: false,
-            dialogClass: 'modal modal-left c4p-modal-search c4p-dialog',
-            backdropClass: 'modal-backdrop c4p-modal-search-backdrop'
+            backdrop: false,
+            windowClass: 'modal c4p-modal-left c4p-modal-search c4p-dialog'
         };
         var resolve = {
             srvData: function () {
@@ -323,6 +312,171 @@ function ctrlEditDialogEmail($scope, srvLocale, srvData, srvConfig, srvFacet, ti
     function isEmail(email){
         return /^([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x22([^\x0d\x22\x5c\x80-\xff]|\x5c[\x00-\x7f])*\x22)(\x2e([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x22([^\x0d\x22\x5c\x80-\xff]|\x5c[\x00-\x7f])*\x22))*\x40([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x5b([^\x0d\x5b-\x5d\x80-\xff]|\x5c[\x00-\x7f])*\x5d)(\x2e([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x5b([^\x0d\x5b-\x5d\x80-\xff]|\x5c[\x00-\x7f])*\x5d))*$/.test( email );
     }
+
+
+    $scope.openDialogPasteNote = function () {
+        var menus = [];
+        var toPasteDoc = [];
+        menus.push({
+            icon: 'chevron-right',
+            name: 'eventAttachments',
+            filterFct: function (object) {
+                for (var i = 0; i < attachments.length; i++) {
+                    if (attachments[i].id.dbid == object.id.dbid) return true;
+                }
+                return false;
+            }
+        });
+        toPasteDoc.push(srvFacet.createEventAttachmentsOrganizer(attachments));
+        var dialogOptions = {
+            backdrop: false,
+            windowClass: 'modal c4p-modal-left c4p-modal-search c4p-dialog'
+        };
+        var resolve = {
+            srvData: function () {
+                return srvData;
+            },
+            srvConfig: function() {
+                return srvConfig;
+            },
+            srvLocale: function () {
+                return srvLocale;
+            },
+            type: function () {
+                return 'Note';
+            },
+            initFilter: function () {
+                return function (object) {
+                    // reject this email
+                    if (emailId && (emailId.dbid == object.id.dbid)) return false;
+                    // reject documents already attached to this note
+                    for (var i = 0; i < $scope.email.documents.length; i++) {
+                        if ($scope.email.documents[i].dbid == object.id.dbid) return false;
+                    }
+                    return true
+                };
+            },
+            initSelector: function () {
+                return function (object) {
+                    return false
+                };
+            },
+            multiple: function () {
+                return true;
+            },
+            createFct: function () {
+                return null;
+            }
+        };
+        if (srvConfig.c4pConfig.exposeFacetDialog) {
+            dialogOptions.controller = 'ctrlFacetSelectedDialog';
+            dialogOptions.templateUrl = 'partials/dialog/dialogFacetSelected.html';
+            resolve.srvFacet = function () { return srvFacet; };
+            resolve.toPasteDoc = function () { return []; };
+        } else {
+            dialogOptions.controller = 'ctrlSelectObjectsDialog';
+            dialogOptions.templateUrl = 'partials/dialog/dialogSelectObjects.html';
+            resolve.suggestedMenus = function () { return []; };
+        }
+        dialogOptions.resolve = resolve;
+        $scope.openDialogFct(dialogOptions, function (result) {
+            if (a4p.isDefined(result)) {
+                a4p.safeApply($scope, function () {
+                    // Synchronize $scope.note.documents and $scope.documents
+                    //$scope.email.documents = [];
+                    //$scope.documents = [];
+                    for (var i = 0; i < result.length; i++) {
+                        $scope.email.body = $scope.email.body + "\n" + result[i].title + "\n" + result[i].description;
+                    }
+                });
+            }
+        });
+    };
+
+    $scope.openDialogPasteReport = function () {
+        var menus = [];
+        var toPasteDoc = [];
+        menus.push({
+            icon: 'chevron-right',
+            name: 'eventAttachments',
+            filterFct: function (object) {
+                for (var i = 0; i < attachments.length; i++) {
+                    if (attachments[i].id.dbid == object.id.dbid) return true;
+                }
+                return false;
+            }
+        });
+        toPasteDoc.push(srvFacet.createEventAttachmentsOrganizer(attachments));
+        var dialogOptions = {
+            backdrop: false,
+            windowClass: 'modal c4p-modal-left c4p-modal-search c4p-dialog'
+        };
+        var resolve = {
+            srvData: function () {
+                return srvData;
+            },
+            srvConfig: function () {
+                return srvConfig;
+            },
+            srvLocale: function () {
+                return srvLocale;
+            },
+            type: function () {
+                return 'Report';
+            },
+            initFilter: function () {
+                return function (object) {
+                    // reject this email
+                    if (emailId && (emailId.dbid == object.id.dbid)) return false;
+                    // reject documents already attached to this note
+                    for (var i = 0; i < $scope.email.documents.length; i++) {
+                        if ($scope.email.documents[i].dbid == object.id.dbid) return false;
+                    }
+                    return true
+                };
+            },
+            initSelector: function () {
+                return function (object) {
+                    return false
+                };
+            },
+            multiple: function () {
+                return true;
+            },
+            createFct: function () {
+                return null;
+            }
+        };
+        if (srvConfig.c4pConfig.exposeFacetDialog) {
+            dialogOptions.controller = 'ctrlFacetSelectedDialog';
+            dialogOptions.templateUrl = 'partials/dialog/dialogFacetSelected.html';
+            resolve.srvFacet = function () {
+                return srvFacet;
+            };
+            resolve.toPasteDoc = function () {
+                return [];
+            };
+        } else {
+            dialogOptions.controller = 'ctrlSelectObjectsDialog';
+            dialogOptions.templateUrl = 'partials/dialog/dialogSelectObjects.html';
+            resolve.suggestedMenus = function () {
+                return [];
+            };
+        }
+        dialogOptions.resolve = resolve;
+        $scope.openDialogFct(dialogOptions, function (result) {
+            if (a4p.isDefined(result)) {
+                a4p.safeApply($scope, function () {
+                    // Synchronize $scope.note.documents and $scope.documents
+                    //$scope.email.documents = [];
+                    //$scope.documents = [];
+                    for (var i = 0; i < result.length; i++) {
+                        $scope.email.body = $scope.email.body + "\n" + result[i].title + "\n" + result[i].description + "\n" + result[i].message;
+                    }
+                });
+            }
+        });
+    };
 
     /**
      * Initialization

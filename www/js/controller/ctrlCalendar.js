@@ -65,7 +65,7 @@ function ctrlCalendar($scope, version, srvAnalytics, srvLocale, srvTime, srvConf
         $scope.calendarViews = [
             {
                 id: 'dayView',
-                icon: 'time'
+                icon: 'clock-o'
             },
             {
                 id: 'monthView',
@@ -100,8 +100,6 @@ function ctrlCalendar($scope, version, srvAnalytics, srvLocale, srvTime, srvConf
             $scope.calendarNow = new Date(srvTime.year, srvTime.month - 1, srvTime.day, 0,  0,  0, 0);
             onCalendarNowChange();
         });
-
-        srvAnalytics.add('Calendar', 'Read', '', 'Calendar', 'view');
     };
 
     function createGroup(date) {
@@ -404,6 +402,9 @@ function ctrlCalendar($scope, version, srvAnalytics, srvLocale, srvTime, srvConf
 		$scope.calendarNextYear = $scope.sel.getFullYear() + 1;
 
         $scope.calendarSelectedDay = getGroupForSelectedDay();
+
+        //GA: user really interact with calendar, he changes the Selected day
+        srvAnalytics.add('Once', 'Calendar');
     }
 
     function onEventChange() {
@@ -445,12 +446,13 @@ function ctrlCalendar($scope, version, srvAnalytics, srvLocale, srvTime, srvConf
 	};
 
     $scope.onEventClick = function (event) {
-        a4p.InternalLog.log('ctrlCalendar - onEventClick',event.name);
-    	$scope.setItemAndGoDetail(event);
+        //a4p.InternalLog.log('ctrlCalendar - onEventClick goto Event with aside closed ',event.name);
+    	$scope.setItemAndGoDetail(event,true);
     };
 
-    $scope.onDayClick = function (date) {
-    	if (!date || date == "undefined") return;
+    $scope.setSelectedDate = function (date){
+
+        if (!date || date == "undefined") return;
         if (($scope.sel.getFullYear() != date.getFullYear())
             || ($scope.sel.getMonth() != date.getMonth())
             || ($scope.sel.getDate() != date.getDate())) {
@@ -458,6 +460,41 @@ function ctrlCalendar($scope, version, srvAnalytics, srvLocale, srvTime, srvConf
             // Refresh
             onSelChange();
         }
+    };
+
+    $scope.onDayClick = function (date) {
+
+        $scope.setSelectedDate(date);
+
+        // temp ?
+        $scope.openDialog(
+                {
+                    backdrop: true,
+                    windowClass: 'modal c4p-modal-large c4p-dialog',
+                    controller: 'ctrlDialogCalendarDay',
+                    templateUrl: 'partials/dialog/dialogCalendarDay.html',
+                    resolve: {
+                        srvLocale: function () {
+                            return $scope.srvLocale;
+                        },
+                        calendarDayCasualName: function () {
+                            return $scope.calendarDayCasualName;
+                        },
+                        calendarDayFullName: function () {
+                            return $scope.calendarDayFullName;
+                        },
+                        calendarSelectedDay: function () {
+                            return $scope.calendarSelectedDay;
+                        }
+                    }
+                },
+                function (item) {
+                    if (item) $scope.onEventClick(item);
+                }
+        );
+
+        return; //soon
+
         //focus on Day Column
         $scope.setCalendarView('dayView');
     };
@@ -627,9 +664,8 @@ function ctrlCalendar($scope, version, srvAnalytics, srvLocale, srvTime, srvConf
 
         $scope.openDialog(
                 {
-                    backdropClick: false,
-                    dialogClass: 'modal c4p-modal-full c4p-dialog',
-                    backdropClass: 'modal-backdrop c4p-modal-create',
+                    backdrop: false,
+                    windowClass: 'modal c4p-modal-large c4p-dialog',
                     controller: 'ctrlEditDialogObject',
                     templateUrl: 'partials/dialog/edit_object.html',
                     resolve: {
@@ -639,7 +675,7 @@ function ctrlCalendar($scope, version, srvAnalytics, srvLocale, srvTime, srvConf
                         srvLocale: function () {
                             return $scope.srvLocale;
                         },
-                        srvonfig: function () {
+                        srvConfig: function () {
                             return srvConfig;
                         },
                         objectItem: function () {
@@ -651,6 +687,15 @@ function ctrlCalendar($scope, version, srvAnalytics, srvLocale, srvTime, srvConf
                                 $scope.srvData.removeAndSaveObject(obj);
                                 $scope.gotoBack(0);
                             };
+                        },
+                        startSpinner: function () {
+                            return $scope.startSpinner;
+                        },
+                        stopSpinner: function () {
+                            return $scope.stopSpinner;
+                        },
+                        openDialogFct: function () {
+                            return $scope.openDialog;
                         }
                     }
                 },
@@ -671,9 +716,8 @@ function ctrlCalendar($scope, version, srvAnalytics, srvLocale, srvTime, srvConf
         a4p.InternalLog.log('ctrlCalendar - openDialogEditEvent', 'Created event.id.dbid:' + event.id.dbid);
         $scope.onEventClick(event);
 
-    	// GA : push calendar event object created
-    	// Measures the volume of created calendar events + calendar event functionality usage per user
-    	srvAnalytics.add('CalendarEvent', 'Create', version, 'CalendarEvent', 'event');
+        //GA: user really interact with calendar, he adds one event
+        srvAnalytics.add('Once', 'Calendar - add Event');
     };
 
     $scope.removeEvent = function(event){
