@@ -3,7 +3,7 @@
     xmlns:gap       = "http://phonegap.com/ns/1.0"
     xmlns:android   = "http://schemas.android.com/apk/res/android"
     id              = "com.apps4pro.c4pint"
-    version         = "14040700" >
+    version         = "14040722" >
     
     <name>C_i</name>
     <description>C4P intégration</description>
