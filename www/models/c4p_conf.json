@@ -1,0 +1,10 @@
+{
+    "buildDate" : "14040910",
+    "urlBase" : "https://apps4pro.net/is2",
+    "trustAllHosts" : true,
+    "possibleCrms" : ["ios", "c4p", "sf"],
+    "activeCrms" : ["ios"],
+    "config" : {
+        "exposeBetaFunctionalities" : true
+    }
+}
