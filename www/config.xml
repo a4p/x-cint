@@ -4,7 +4,7 @@
     xmlns:cdv       = "http://cordova.apache.org/ns/1.0"
     xmlns:android   = "http://schemas.android.com/apk/res/android"
     id              = "com.apps4pro.c4pint"
-    version         = "14042100" 
+    version         = "14042214" 
     versionCode     = "C4P_BUILD_DATE" >
     
     <name>C_i</name>
@@ -37,7 +37,8 @@
             http://docs.phonegap.com/en/edge/guide_platforms_ios_config.md.html#iOS%20Configuration) 
             http://docs.phonegap.com/en/edge/guide_platforms_android_config.md.html#Android%20Configuration
     -->
-    <preference name="webviewbounce" value="true" />
+    <preference name="webviewbounce" value="false" />
+    <preference name="DisallowOverscroll" value="true" />
     <preference name="stay-in-webview" value="false" />
     <preference name="show-splash-screen-spinner" value="true" />
     <preference name="auto-hide-splash-screen" value="true" />
@@ -53,10 +54,10 @@
     <preference name="ErrorUrl" value=""/>
     <preference name="BackgroundColor" value=""/>
     <preference name="KeepRunning" value="true"/>
-    <preference name="DisallowOverscroll" value="false"/>
     <preference name="LoadingDialog" value=","/> 
     <preference name="LoadUrlTimeoutValue" value="50000" />
     <preference name="disable-cursor" value="false" />
+    <preference name="KeyboardShrinksView" value="true" />
 
     <!-- iOS allows registration of custom URL Schemes. <gap:url-scheme> -->
     <!-- C4P_BUILD_PLUGINS -->
