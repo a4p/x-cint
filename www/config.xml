@@ -4,7 +4,7 @@
     xmlns:cdv       = "http://cordova.apache.org/ns/1.0"
     xmlns:android   = "http://schemas.android.com/apk/res/android"
     id              = "com.apps4pro.c4pint"
-    version         = "14042500" 
+    version         = "14042620" 
     versionCode     = "C4P_BUILD_DATE" >
     
     <name>C_i</name>
@@ -61,6 +61,7 @@
 
     <!-- iOS allows registration of custom URL Schemes. <gap:url-scheme> -->
     <!-- C4P_BUILD_PLUGINS -->
+<gap:plugin name="com.wizardlogic.cordova.ios_keyboard" />
 <gap:plugin name="com.badrit.contactpicker" />
 <gap:plugin name="com.phonegap.plugin.statusbar" />
 <gap:plugin name="com.adobe.plugins.gaplugin" />
