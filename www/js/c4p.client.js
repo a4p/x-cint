@@ -1,4 +1,4 @@
-/*! c4p.client 2014-06-04 00:17 */
+/*! c4p.client 2014-06-04 17:23 */
 function rhex(num) {
     for (str = "", j = 0; 3 >= j; j++) str += hex_chr.charAt(num >> 8 * j + 4 & 15) + hex_chr.charAt(num >> 8 * j & 15);
     return str;
@@ -2569,9 +2569,7 @@ function ctrlMeeting($scope, $modal, $timeout, srvData, srvConfig, srvNav, srvLo
             main: "partials/meeting/meeting_plan_viewer.html"
         }
     }, $scope.meetingSelectedActionItem = "plan", $scope.actionItem = $scope.actionItems[$scope.meetingSelectedActionItem], 
-    $scope.$on("$destroy", function() {
-        $scope.savePlans();
-    }), $scope.initMeetingElements = function() {
+    $scope.$on("$destroy", function() {}), $scope.initMeetingElements = function() {
         if (!$scope.meetingHasBeenInitialized) {
             if (!$scope.srvNav.item) return void $scope.initWithDemoData();
             $scope.meetingItem = $scope.srvNav.item, srvAnalytics.add("Once", "Meeting Show");
@@ -2615,11 +2613,14 @@ function ctrlMeeting($scope, $modal, $timeout, srvData, srvConfig, srvNav, srvLo
         a4p.isUndefinedOrNull(plans) && (plans = $scope.meetingPlans);
         for (var i = 0; i < plans.length; i++) {
             plans[i].pos = i, srvData.setAndSaveObject(plans[i]);
-            for (var plannees = srvData.getTypedDirectLinks(plans[i], "plannee", "Plannee"), j = 0; j < plannees.length; j++) srvData.setAndSaveObject(plannees[j]);
+            for (var plannees = srvData.getTypedDirectLinks(plans[i], "plannee", "Plannee"), j = 0; j < plannees.length; j++) {
+                $scope.srvData.setAndSaveObject(plannees[j]);
+                var planneeObj = srvData.getObject(plannees[j].object_id.dbid);
+                $scope.srvData.setAndSaveObject(planneeObj);
+            }
             var subPlans = srvData.getTypedDirectLinks(plans[i], "child", "Plan");
             subPlans = subPlans.sort(_sortPosAsc), $scope.savePlans(subPlans);
         }
-        $scope.srvData.setAndSaveObject($scope.meetingItem);
     }, $scope.setModeEdit = function(mode) {
         var oldMode = $scope.modeEdit;
         $scope.modeEdit = mode, oldMode && !mode && $scope.srvData.setAndSaveObject($scope.meetingItem);
@@ -3085,7 +3086,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $anchorScroll, $http, $
                 a4p.ErrorLog.log("ctrlNavigation", "downloadFullMap empty"), scope.filteredContacts = [], 
                 scope.filteredAccounts = [], scope.filteredEvents = [], scope.filteredOpportunities = [], 
                 scope.filteredDocuments = [], scope.setFirstConfigDone(!0), scope.$broadcast("mindMapLoaded"), 
-                endSynchronization(scope), deferred.resolve();
+                endSynchronization(scope), scope.gotoWelcome(), deferred.resolve();
             });
         });
     }
@@ -3150,16 +3151,18 @@ function navigationCtrl($scope, $q, $timeout, $location, $anchorScroll, $http, $
         a4p.safeApply($scope, function() {
             a4p.InternalLog.log("ctrlNavigation", "initFinished - guider: / firstConfig:" + $scope.firstConfigDone + " / slide:" + $scope.slide + " / page:" + $scope.page), 
             $scope.setA4pSpinnerState("done"), srvLoad.setLoaded(), deferred.resolve(), $scope.initializationFinished = !0, 
-            srvAnalytics.run();
-            var login = srvSecurity.getA4pLogin();
-            srvAnalytics.setUid(login), srvAnalytics.add("Once", "App launched"), srvData.start(), 
-            $scope.firstConfigDone && $scope.rememberPassword || srvSecurity.resetPINCode(), 
+            srvData.start(), $scope.firstConfigDone && $scope.rememberPassword || srvSecurity.resetPINCode(), 
             srvSecurity.isSecured() ? $scope.openDialogLocked(function() {
                 a4p.safeApply($scope, function() {
                     $scope.firstConfigDone && $scope.rememberPassword ? $scope.gotoWelcome() : $scope.gotoRegister();
                 });
-            }) : $scope.firstConfigDone && $scope.rememberPassword ? $scope.gotoWelcome() : $scope.gotoRegister(), 
-            $scope.taskTimer || $scope.runNextTask();
+            }) : $scope.firstConfigDone && $scope.rememberPassword ? a4p.safeApply($scope, function() {
+                $scope.gotoWelcome();
+            }) : a4p.safeApply($scope, function() {
+                $scope.gotoRegister();
+            }), $scope.taskTimer || $scope.runNextTask(), srvAnalytics.run();
+            var login = srvSecurity.getA4pLogin();
+            srvAnalytics.setUid(login), srvAnalytics.add("Once", "App launched");
         });
     }, $scope.loadLocalStorage = function() {
         srvConfig.init(), srvLog.init(), srvLocale.init(), srvSecurity.init(), $scope.isDemo = srvLocalStorage.get("DemoMode", !1), 
@@ -3203,7 +3206,6 @@ function navigationCtrl($scope, $q, $timeout, $location, $anchorScroll, $http, $
     }, $scope.gotoRegister = function() {
         $scope.gotoSlide($scope.pageGuider, $scope.slideGuiderRegister);
     }, $scope.gotoWelcome = function() {
-        alert("Welcome");
         var login = srvSecurity.getA4pLogin();
         srvAnalytics.setUid(login), $scope.gotoSlide($scope.pageNavigation, $scope.slideNavigationCalendar);
     }, $scope.gotoMeeting = function(item) {
@@ -3290,8 +3292,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $anchorScroll, $http, $
     }, $scope.getSlideFromDetail = function() {
         return $scope.slide;
     }, $scope.getSlideFromGuider = function() {
-        return a4p.InternalLog.log("ctrlNavigation - getSlideFromGuider: " + $scope.slide), 
-        $scope.slide;
+        return $scope.slide;
     }, $scope.getSlideFromFooter = function() {
         return $scope.slide;
     }, $scope.getPage = function() {
@@ -3300,10 +3301,10 @@ function navigationCtrl($scope, $q, $timeout, $location, $anchorScroll, $http, $
         return $scope.page;
     }, $scope.gotoBack = function(index) {
         var back = srvNav.backInHistory(index);
-        null != back ? back.id ? $scope.setItemAndGoDetail(srvData.getObject(back.id)) : $scope.gotoSlide(back.page, back.slide) : $scope.gotoSlide($scope.pageNavigation, $scope.slideNavigationCalendar);
+        back ? back.id ? $scope.setItemAndGoDetail(srvData.getObject(back.id)) : $scope.gotoSlide(back.page, back.slide) : $scope.gotoSlide($scope.pageNavigation, $scope.slideNavigationCalendar);
     }, $scope.gotoIndex = function(index) {
         var back = srvNav.gotoInHistory(index);
-        null != back ? back.id ? $scope.setItemAndGoDetail(srvData.getObject(back.id)) : $scope.gotoSlide(back.page, back.slide) : $scope.gotoSlide($scope.pageNavigation, $scope.slideNavigationCalendar);
+        back ? back.id ? $scope.setItemAndGoDetail(srvData.getObject(back.id)) : $scope.gotoSlide(back.page, back.slide) : $scope.gotoSlide($scope.pageNavigation, $scope.slideNavigationCalendar);
     }, $scope.resumeSlide = function() {
         $scope.gotoSlide($scope.pausedPage, $scope.pausedSlide);
     }, $scope.gotoSlideWithSearchReset = function(nextPage, nextSlide) {
@@ -3312,7 +3313,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $anchorScroll, $http, $
         $scope.calendarView = view, $scope.updateScroller();
     }, $scope.calculSelectDefault = function(elements, type, order) {
         if (order) {
-            for (var orderby = "", dbid = "", fullname = "", companyName = "", name = "", direction = !1, i = 0; i < elements.length; i++) 0 == i ? ("contacts" == type ? (fullname = elements[i].first_name + " " + elements[i].last_name, 
+            for (var orderby = "", dbid = "", fullname = "", companyName = "", name = "", direction = !1, i = 0; i < elements.length; i++) 0 === i ? ("contacts" == type ? (fullname = elements[i].first_name + " " + elements[i].last_name, 
             orderby = fullname.toLowerCase()) : "accounts" == type ? (companyName = elements[i].company_name, 
             orderby = companyName.toLowerCase()) : (name = elements[i].name, orderby = name.toLowerCase()), 
             dbid = elements[i].dbid) : "contacts" == type ? (fullname = elements[i].first_name + " " + elements[i].last_name, 
@@ -3801,7 +3802,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $anchorScroll, $http, $
             if (a4p.isDefined(result)) {
                 if (!result.feedback.message) return void alert(srvLocale.translations.htmlMsgFeedbackMessageEmpty);
                 if (!srvSecurity.getA4pLogin()) {
-                    if ((a4p.isUndefined(result.feedback.email) || "" == result.feedback.email) && (a4p.isUndefined(result.feedback.phone) || "" == result.feedback.phone)) return void alert(srvLocale.translations.htmlMsgFeedbackContactEmpty);
+                    if (!(!a4p.isUndefined(result.feedback.email) && result.feedback.email || !a4p.isUndefined(result.feedback.phone) && result.feedback.phone)) return void alert(srvLocale.translations.htmlMsgFeedbackContactEmpty);
                     srvSecurity.setA4pLogin(result.feedback.email);
                 }
                 var params = {
@@ -6968,12 +6969,12 @@ function addOther(items, item) {
 }
 
 function handleOpenURL(url) {
-    alert("handleOpenURL " + url), window.setTimeout(function() {
-        if (null !== srvOpenUrlSingleton) srvOpenUrlSingleton.openUrl(url); else {
+    window.setTimeout(function() {
+        if (srvOpenUrlSingleton) srvOpenUrlSingleton.openUrl(url); else {
             var msg = "Application not yet started to import the file " + url;
-            console.log(msg);
+            alert(msg);
         }
-    }, 1e3);
+    }, 4e3);
 }
 
 if (function(e, undefined) {
@@ -35348,9 +35349,12 @@ var SrvConfig = function() {
     }
     function onCreateSuccess(self, requestCtx, responseData) {
         var object = self.getObject(requestCtx.dbid), askedCreated = responseData.askedCreated, created = responseData.created, errors = responseData.errors;
-        a4p.isTrueOrNonEmpty(errors) && a4p.ErrorLog.log("srvData", "reject creating parts of item " + requestCtx.dbid + " : " + a4pDumpData(errors, 1)), 
-        a4p.isDefined(object) ? (self.srvSynchroStatus.successChannel(object, self.srvSynchroStatus.PUB.CHANNEL_CREATE), 
-        createdObject(self, requestCtx.dbid, askedCreated, created)) : a4p.InternalLog.log("srvData", "create success on unknown object " + requestCtx.dbid + " : object has been deleted during the request");
+        if (a4p.isTrueOrNonEmpty(errors) && a4p.ErrorLog.log("srvData", "reject creating parts of item " + requestCtx.dbid + " : " + a4pDumpData(errors, 1)), 
+        a4p.isDefined(object)) {
+            self.srvSynchroStatus.successChannel(object, self.srvSynchroStatus.PUB.CHANNEL_CREATE);
+            var ret = createdObject(self, requestCtx.dbid, askedCreated, created);
+            ret && (ret = addOriginalObject(self, object, !1));
+        } else a4p.InternalLog.log("srvData", "create success on unknown object " + requestCtx.dbid + " : object has been deleted during the request");
     }
     function onCreateFailure(self, requestCtx) {
         var object = self.getObject(requestCtx.dbid);
@@ -36141,7 +36145,8 @@ var SrvConfig = function() {
             object.id[crm + "_id"] = id, created[i].tmpId && delete self.index[crm][created[i].tmpId], 
             self.index[crm][id] = object, updateLinkedObjects(self, object.a4p_type, itemId, crm + "_id", id);
         }
-        self.srvDataStore.setItems(object.a4p_type, self.currentItems[object.a4p_type]);
+        return self.srvDataStore.setItems(object.a4p_type, self.currentItems[object.a4p_type]), 
+        !0;
     }
     function updatedObject(self, itemId, askedUpdated, updated) {
         for (var object = self.index.db[itemId], i = 0, nb = updated.length; nb > i; i++) {
@@ -36166,13 +36171,13 @@ var SrvConfig = function() {
         unlinkLinkedObjects(self, itemId, isOriginal);
     }
     function addOriginalObject(self, object, downloadFile) {
-        if (self && object) {
-            a4p.InternalLog.log("srvData", "addOriginalObject " + object.id.dbid);
-            var copy = copyObject(object);
-            a4p.isDefined(copy) && (self.originalDbIndex[object.id.dbid] = copy, self.originalItems[copy.a4p_type].push(copy), 
-            self.srvDataStore.setItems(copy.a4p_type, self.originalItems[copy.a4p_type], !0)), 
-            a4p.isDefined(c4p.Model.files[object.a4p_type]) && (a4p.isDefined(object.id.sf_id) || a4p.isDefined(object.id.c4p_id)) && downloadFile && addObjectToDownload(self, object);
-        }
+        if (!self || !object) return !1;
+        a4p.InternalLog.log("srvData", "addOriginalObject " + object.id.dbid);
+        var copy = copyObject(object);
+        return a4p.isDefined(copy) && (self.originalDbIndex[object.id.dbid] = copy, self.originalItems[copy.a4p_type].push(copy), 
+        self.srvDataStore.setItems(copy.a4p_type, self.originalItems[copy.a4p_type], !0)), 
+        a4p.isDefined(c4p.Model.files[object.a4p_type]) && (a4p.isDefined(object.id.sf_id) || a4p.isDefined(object.id.c4p_id)) && downloadFile && addObjectToDownload(self, object), 
+        !0;
     }
     function updateOriginalObject(self, object, fields) {
         a4p.InternalLog.log("srvData", "updateOriginalObject " + object.id.dbid);
@@ -39390,6 +39395,7 @@ var SrvFacet = function() {
         change;
     }, Service;
 }(), SrvOpenUrl = function() {
+    "use strict";
     function Service(exceptionHandlerService) {
         this.exceptionHandler = exceptionHandlerService, this.callbacks = [], this.callbackHandle = 0;
     }
@@ -40036,7 +40042,11 @@ appModule.factory("$exceptionHandler", [ "$log", function($log) {
 
 var srvOpenUrlSingleton = null;
 
-serviceModule.factory("srvOpenUrl", [ "$exceptionHandler", function($exceptionHandler) {
+window.plugins && window.plugins.webintent && window.plugins.webintent.getExtra(WebIntent.EXTRA_TEXT, function(url) {
+    handleOpenURL(url);
+}, function() {
+    alert("App is launched...");
+}), serviceModule.factory("srvOpenUrl", [ "$exceptionHandler", function($exceptionHandler) {
     return srvOpenUrlSingleton = new SrvOpenUrl($exceptionHandler);
 } ]), serviceModule.factory("srvTime", [ "$exceptionHandler", function($exceptionHandler) {
     return new SrvTime($exceptionHandler);
