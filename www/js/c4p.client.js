@@ -1,4 +1,4 @@
-/*! c4p.client 2014-06-05 00:15 */
+/*! c4p.client 2014-06-05 10:57 */
 function rhex(num) {
     for (str = "", j = 0; 3 >= j; j++) str += hex_chr.charAt(num >> 8 * j + 4 & 15) + hex_chr.charAt(num >> 8 * j & 15);
     return str;
@@ -104,15 +104,17 @@ function openChildBrowser(a, b, c, d) {
     }
     if (window.device) {
         a4p.InternalLog.log("openChildBrowser", "cordova : window.open");
-        var k = window.open(a, "_system", "location=no");
-        k.addEventListener("loadstart", function(a) {
+        var k = "_blank";
+        "url" == b && (k = "_system");
+        var l = window.open(a, k, "location=no");
+        l.addEventListener("loadstart", function(a) {
             a4p.InternalLog.log("openChildBrowser", "loadstart " + a.url);
-        }), k.addEventListener("loadstop", function(a) {
+        }), l.addEventListener("loadstop", function(a) {
             a4p.InternalLog.log("openChildBrowser", "loadstop " + a.url), "string" == typeof a.url && a.url.indexOf("about:blank") >= 0 && (e = !0, 
-            c && c(), k.close());
-        }), k.addEventListener("loaderror", function(a) {
+            c && c(), l.close());
+        }), l.addEventListener("loaderror", function(a) {
             a4p.InternalLog.log("openChildBrowser", "loaderror " + a.url);
-        }), k.addEventListener("exit", function(a) {
+        }), l.addEventListener("exit", function(a) {
             a4p.InternalLog.log("openChildBrowser", "exit " + a.url), e || d && d();
         });
     }
@@ -1956,7 +1958,7 @@ function ctrlConfig($scope, srvConfig, srvLog, srvLocale, srvSecurity, srvDataTr
     }, $scope.setSizeCss = function(sizeCss) {
         srvConfig.setSizeCss(sizeCss);
     }, $scope.sendFeedback = function() {
-        $scope.openDialogSendFeedbackReport("CRM Pad user feedback");
+        $scope.openDialogSendFeedbackReport("CRM Meeting Pad user feedback");
     }, $scope.openHelpDialog = function() {
         $scope.openDialogMessage(srvLocale.translations.htmlTextNeedHelpDetail);
     }, $scope.switchUser = function() {
@@ -3120,7 +3122,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $anchorScroll, $http, $
     $scope.srvLocale = srvLocale, $scope.srvData = srvData, $scope.srvRunning = srvRunning, 
     $scope.srvSecurity = srvSecurity, $scope.srvSynchro = srvSynchro, $scope.srvQueue = srvQueue, 
     $scope.srvLink = srvLink, $scope.srvNav = srvNav, $scope.srvGuider = srvGuider, 
-    $scope.srvOpenUrl = srvOpenUrl, $scope.fileStorageQuota = 4294967296, $scope.initAlreadyCalled = !1, 
+    $scope.srvOpenUrl = srvOpenUrl, $scope.fileStorageQuota = 4294967296, $scope.initCtrlNavigationDone = !1, 
     $scope.initializationFinished = !1, $scope.lastRefresh = null, $scope.isDemo = !1, 
     $scope.firstConfigDone = !1, $scope.rememberPassword = !0, $scope.keepCrmLogin = !1, 
     $scope.taskTimer = null, $scope.taskQueue = [], $scope.enqueueTask = function(fct) {
@@ -3135,8 +3137,8 @@ function navigationCtrl($scope, $q, $timeout, $location, $anchorScroll, $http, $
     }, $scope.initNavigationCtrl = function() {
         a4p.InternalLog.log("navigationCtrl", "init() launched by AngularJS");
         var deferred = $q.defer();
-        if ($scope.initAlreadyCalled) return deferred.resolve(), deferred.promise;
-        $scope.initAlreadyCalled = !0;
+        if ($scope.initCtrlNavigationDone) return deferred.resolve(), deferred.promise;
+        $scope.initCtrlNavigationDone = !0;
         var msg = "Initializing Cache: " + $scope.page + " page";
         srvLoad.setStatus(msg);
         var startApplication = function() {
@@ -3848,7 +3850,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $anchorScroll, $http, $
         $scope.openShowImageDialog(imageObject);
     }, $scope.importNewFile = function(url) {
         var filename = decodeURI(url.split("/")[url.split("/").length - 1]);
-        if (console.log("importNewFile userId = " + a4pDumpData(srvData.userId, 2)), a4p.InternalLog.log("ctrlNavigation.importNewFile", url + " initialized=" + $scope.initAlreadyCalled + " userId=" + a4pDumpData(srvData.userId, 2)), 
+        if (console.log("importNewFile userId = " + a4pDumpData(srvData.userId, 2)), a4p.InternalLog.log("ctrlNavigation.importNewFile", url + " initialized=" + $scope.initCtrlNavigationDone + " userId=" + a4pDumpData(srvData.userId, 2)), 
         a4p.isUndefined(srvData.userId.dbid)) return void window.alert(srvLocale.translations.htmlMsgRejectImportNotLogged);
         var contact = srvData.getObject(srvData.userId.dbid);
         if (a4p.isUndefined(contact)) return void window.alert(srvLocale.translations.htmlMsgRejectImportNotLogged);
@@ -4130,7 +4132,7 @@ function navigationCtrl($scope, $q, $timeout, $location, $anchorScroll, $http, $
                 deferred.reject(response);
             });
         }
-    };
+    }, $scope.initNavigationCtrl();
 }
 
 function networkTestRunnerCtrl($scope, $q, $location, $http, $modal, version, srvLoad, srvLocalStorage, srvFileStorage, srvAnalytics, srvConfig, srvLog, srvLocale, srvData, srvRunning, srvSecurity, srvSynchro, cordovaReady) {
@@ -6975,7 +6977,7 @@ function handleOpenURL(url) {
             var msg = "Application not yet started to import the file " + url;
             alert(msg);
         }
-    }, 4e3);
+    }, 1e3);
 }
 
 if (function(e, undefined) {
@@ -27837,7 +27839,7 @@ var c4p;
 
 c4p || (c4p = {}), c4p.Locale = {
     en: {
-        htmlGuiderPageTitle: "CRM Pad",
+        htmlGuiderPageTitle: "CRM Meeting Pad",
         htmlGuiderFormStaySignedIn: "Stay signed in",
         htmlGuiderTextPasswordForgotten: "Please prompt your email. A link will be sent allowing you to reset your password",
         htmlGuiderTextValidation: "Synchronization is running. Please wait ...",
@@ -28568,7 +28570,7 @@ c4p || (c4p = {}), c4p.Locale = {
         rangeSeparator: " - "
     },
     fr: {
-        htmlGuiderPageTitle: "CRM Pad",
+        htmlGuiderPageTitle: "CRM Meeting Pad",
         htmlGuiderFormStaySignedIn: "Rester connecté",
         htmlGuiderTextPasswordForgotten: "Veuillez saisir votre email. Un lien permettant de regénérer votre mot de passe vous sera envoyé",
         htmlGuiderTextValidation: "Synchronisation en cours. Veuillez patientez ...",
@@ -40026,7 +40028,6 @@ appModule.factory("$exceptionHandler", [ "$log", function($log) {
         };
         return null !== $window.navigator.userAgent.toLowerCase().match(/(iphone|ipod|ipad|android|blackberry|webos|symbian|ios|bada|tizen|windows phone)/) ? $window.document.addEventListener("deviceready", function() {
             a4p.safeApply($rootScope, function() {
-                console.log("invokeString" in window ? "onDeviceReady: " + window.invokeString : "onDeviceReady: no invokeString"), 
                 readyCallback();
             });
         }, !1) : null !== $window.navigator.userAgent.toLowerCase().match(/(firefox|msie|opera|chrome|safari|windows nt 6.2)/) ? (console.log("cordovaReady No Cordova : cordovaReady() is called immediately"), 
@@ -40043,11 +40044,7 @@ appModule.factory("$exceptionHandler", [ "$log", function($log) {
 
 var srvOpenUrlSingleton = null;
 
-window.plugins && window.plugins.webintent && window.plugins.webintent.getExtra(WebIntent.EXTRA_TEXT, function(url) {
-    handleOpenURL(url);
-}, function() {
-    alert("App is launched...");
-}), serviceModule.factory("srvOpenUrl", [ "$exceptionHandler", function($exceptionHandler) {
+serviceModule.factory("srvOpenUrl", [ "$exceptionHandler", function($exceptionHandler) {
     return srvOpenUrlSingleton = new SrvOpenUrl($exceptionHandler);
 } ]), serviceModule.factory("srvTime", [ "$exceptionHandler", function($exceptionHandler) {
     return new SrvTime($exceptionHandler);
@@ -40078,10 +40075,18 @@ window.plugins && window.plugins.webintent && window.plugins.webintent.getExtra(
             });
         }, !1), $window.document.addEventListener("resign", function() {}, !1), $window.document.addEventListener("active", function() {}, !1), 
         $window.document.addEventListener("backbutton", function() {
-            $window.navigator.notification.confirm("Are you sure you want to EXIT the program ?", function(button) {
+            $window.navigator.notification.confirm("Do you want to exit ?", function(button) {
                 ("1" == button || 1 == button) && $window.navigator.app.exitApp();
             }, "EXIT :", "OK,Cancel");
-        }, !1);
+        }, !1), window.plugins && window.plugins.webintent && (window.plugins.webintent.getExtra(WebIntent.EXTRA_TEXT, function(url) {
+            console.log("window.plugins.webintent.getExtra text " + url), handleOpenURL(url);
+        }, function() {
+            console.log("App is launched text...");
+        }), window.plugins.webintent.getExtra(WebIntent.EXTRA_STREAM, function(url) {
+            console.log("window.plugins.webintent.getExtra stream " + url), handleOpenURL(url);
+        }, function() {
+            console.log("App is launched stream...");
+        }));
     })(), runningSingleton;
 } ]), serviceModule.factory("srvLocalStorage", function() {
     var LocalStorage = a4p.LocalStorageFactory(window.localStorage);
