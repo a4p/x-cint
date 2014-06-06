@@ -1,4 +1,4 @@
-/*! c4p.client 2014-06-06 00:45 */
+/*! c4p.client 2014-06-07 00:14 */
 function rhex(num) {
     for (str = "", j = 0; 3 >= j; j++) str += hex_chr.charAt(num >> 8 * j + 4 & 15) + hex_chr.charAt(num >> 8 * j & 15);
     return str;
@@ -102,22 +102,20 @@ function openChildBrowser(a, b, c, d) {
         };
         return void setTimeout(j, 100);
     }
-    if (window.device) {
-        a4p.InternalLog.log("openChildBrowser", "cordova : window.open");
-        var k = "_blank";
-        "url" == b && (k = "_system");
-        var l = window.open(a, k, "location=no");
-        l.addEventListener("loadstart", function(a) {
-            a4p.InternalLog.log("openChildBrowser", "loadstart " + a.url);
-        }), l.addEventListener("loadstop", function(a) {
-            a4p.InternalLog.log("openChildBrowser", "loadstop " + a.url), "string" == typeof a.url && a.url.indexOf("about:blank") >= 0 && (e = !0, 
-            c && c(), l.close());
-        }), l.addEventListener("loaderror", function(a) {
-            a4p.InternalLog.log("openChildBrowser", "loaderror " + a.url);
-        }), l.addEventListener("exit", function(a) {
-            a4p.InternalLog.log("openChildBrowser", "exit " + a.url), e || d && d();
-        });
-    }
+    a4p.InternalLog.log("openChildBrowser", "cordova : window.open");
+    var k = "_blank";
+    "url" != b && (k = "_system");
+    var l = window.open(a, k, "location=no");
+    l.addEventListener("loadstart", function(a) {
+        a4p.InternalLog.log("openChildBrowser", "loadstart " + a.url);
+    }), l.addEventListener("loadstop", function(a) {
+        a4p.InternalLog.log("openChildBrowser", "loadstop " + a.url), "string" == typeof a.url && a.url.indexOf("about:blank") >= 0 && (e = !0, 
+        c && c(), l.close());
+    }), l.addEventListener("loaderror", function(a) {
+        a4p.InternalLog.log("openChildBrowser", "loaderror " + a.url);
+    }), l.addEventListener("exit", function(a) {
+        a4p.InternalLog.log("openChildBrowser", "exit " + a.url), e || d && d();
+    });
 }
 
 function closeWindow() {
@@ -18400,9 +18398,9 @@ a4p || (a4p = {}), a4p.Analytics = function() {
     }, a.prototype.setVid = function(a) {
         this.vid = a, a4p.InternalLog.log("Analytics", "set vid " + this.vid);
     }, a.prototype.setUid = function(a) {
-        a4p.InternalLog.log("Analytics", "set uid " + a), a && "" != a && (this.uid = a);
+        a4p.InternalLog.log("Analytics", "set uid " + a), a && "" !== a && (this.uid = a);
     }, a.prototype.setEnabled = function(a) {
-        this.bEnabled = 1 == a, a4p.InternalLog.log("Analytics", "set enabled " + this.bEnabled);
+        this.bEnabled = a === !0, a4p.InternalLog.log("Analytics", "set enabled " + this.bEnabled);
     }, a.prototype.add = function(a, d, e) {
         if (this.bEnabled && a && d) {
             var f = !0;
