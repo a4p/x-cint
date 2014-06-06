@@ -2,13 +2,17 @@
 
 
 echo ""
-echo "[--- C4P : DEV Build mobile ---]"
+echo "[--- C4P : INT Build mobile ---]"
 echo ""
 
 #sudo npm update -g cordova
 rm -rf build
 
-cordova create build com.apps4pro.c4pdev c4p
+cordova create build com.apps4pro.c4pint c4p
+
+#########################
+# Should be equal to DEV ... just "C_i" and "c4pint"
+#########################
 
 cp -r www build/.
 cp build/www/config.xml build/config.xml
@@ -41,7 +45,7 @@ cordova plugin add org.apache.cordova.splashscreen
 cordova plugin add org.apache.cordova.inappbrowser
 cordova plugin add org.apache.cordova.console
 
-#cordova plugin add https://github.com/phonegap-build/GAPlugin.git
+cordova plugin add https://github.com/phonegap-build/GAPlugin.git
 cordova plugin add https://github.com/phonegap-build/StatusBarPlugin.git
 cordova plugin add https://github.com/hazemhagrass/ContactPicker.git
 cordova plugin add https://github.com/mhweiner/CordovaiOSKeyboardPlugin.git
@@ -71,9 +75,9 @@ cordova compile android
 
 cd platforms/android
 ant release
-jarsigner -keystore ../../../../../c4p/c4p_html_ang/mobile_res/android_key/apps4pro-key.keystore -storepass apps4pro -digestalg SHA1 -sigalg MD5withRSA bin/C_d-release-unsigned.apk mykey
-cp bin/C_d-release-unsigned.apk ../../C_d.apk
-zipalign -f 4 ../../C_d.apk ../../C_d-aligned.apk
+jarsigner -keystore ../../../../../c4p/c4p_html_ang/mobile_res/android_key/apps4pro-key.keystore -storepass apps4pro -digestalg SHA1 -sigalg MD5withRSA bin/C_i-release-unsigned.apk mykey
+cp bin/C_i-release-unsigned.apk ../../C_i.apk
+zipalign -f 4 ../../C_i.apk ../../C_i-aligned.apk
 cd ../..
 
 
