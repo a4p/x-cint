@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0"
     xmlns:gap="http://phonegap.com/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android"
-    id="com.apps4pro.c4pint" version="14.0607.00">
+    id="com.apps4pro.c4pint" version="14.0608.00">
 
-    <name>C_i</name>
-    <description>C4P intégration</description>
+    <name>Meeting Pad+</name>
+    <description>CRM Meeting Pad 4 Partners</description>
     <author email="contact@apps4pro.com" href="https://apps4pro.com">Apps4pro Team</author>
 
     <access origin="file:///" subdomains="true" />
