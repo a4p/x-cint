@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0"
     xmlns:gap="http://phonegap.com/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android"
-    id="com.apps4pro.c4pint" version="14.0616.00">
+    id="com.apps4pro.c4pint" version="14.0623.14">
 
     <name>Meeting Pad+</name>
     <description>CRM Meeting Pad 4 Partners</description>
@@ -66,6 +66,9 @@
 
     <!-- ??? to open external files -->
     <preference name="AndroidExtraFilesystems" value="files,files-external,documents,sdcard,cache,cache-external,root" />
+    <feature name="Keyboard">
+            <param name="ios-package" value="IonicKeyboard" onload="true" />
+    </feature>
 
     <!-- iOS allows registration of custom URL Schemes. <gap:url-scheme> -->
     <!-- C4P_BUILD_PLUGINS -->
