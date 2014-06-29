@@ -24021,6 +24021,161 @@ body {
 .c4p-card-summarized .c4p-card-thumb .glyphicon-star.c4p-outline-star {
   opacity: 0.6;
 }
+.c4p-hour-selected {
+  border: #e51400;
+}
+.c4p-label-calendar {
+  background-color: transparent;
+  color: #888888;
+}
+.c4p-label-calendar-light {
+  background-color: transparent;
+  color: #999999;
+}
+.c4p-label-calendar-dark {
+  background-color: transparent;
+  color: #333333;
+}
+.c4p-label-calendar-notallday {
+  background-color: white;
+}
+.c4p-label-calendar-notallday-inverse {
+  background-color: #c9a734;
+}
+.c4p-label-calendar-all-day {
+  background-color: #d5b95b;
+}
+.c4p-label-calendar-day {
+  background-color: transparent;
+  color: #4f4215;
+}
+.c4p-icon-calendar-allday {
+  color: #000000;
+}
+table,
+.table {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none;
+}
+table th,
+.table th,
+table td,
+.table td {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none;
+}
+table th,
+.table th {
+  vertical-align: center;
+  text-align: center;
+}
+table h1,
+.table h1,
+table h2,
+.table h2,
+table h3,
+.table h3,
+table h4,
+.table h4,
+table h5,
+.table h5,
+table h6,
+.table h6 {
+  padding: 0;
+  margin: 0;
+}
+.c4p-table-layout {
+  background-color: #d0d0d0;
+}
+.c4p-table-layout th,
+.c4p-table-layout td {
+  background-color: #d0d0d0;
+}
+.c4p-table-calendar-month {
+  color: #b7b7b7;
+  border: none;
+}
+.c4p-table-calendar-month th {
+  background-color: #9d9d9d;
+  border: 1px solid #d0d0d0;
+}
+.c4p-table-calendar-month td {
+  background-color: white;
+  border: 1px solid #d0d0d0;
+}
+.c4p-table-calendar-month th.c4p-cell-initial .c4p-label-calendar,
+.c4p-table-calendar-month td.c4p-cell-initial .c4p-label-calendar {
+  color: white;
+  background-color: #cccccc;
+}
+.c4p-table-calendar-month th.c4p-cell-selected,
+.c4p-table-calendar-month td.c4p-cell-selected {
+  border: 2px #c9a734 solid;
+}
+.c4p-table-calendar-month th.c4p-cell-weekend,
+.c4p-table-calendar-month td.c4p-cell-weekend {
+  background-color: #f2f2f2;
+}
+.c4p-table-calendar-month th.c4p-cell-disabled .c4p-label-calendar,
+.c4p-table-calendar-month td.c4p-cell-disabled .c4p-label-calendar {
+  color: #ffffff;
+}
+.c4p-table-calendar-month th.c4p-cell-disabled .c4p-label-calendar-dark,
+.c4p-table-calendar-month td.c4p-cell-disabled .c4p-label-calendar-dark {
+  color: #eaeaea;
+}
+.c4p-table-calendar-month th.c4p-cell-disabled .c4p-label-calendar-allday,
+.c4p-table-calendar-month td.c4p-cell-disabled .c4p-label-calendar-allday {
+  background-color: #333333;
+}
+.c4p-table-calendar-month thead:first-child tr:first-child th {
+  border: 1px solid #b7b7b7;
+}
+.c4p-table-calendar-month th.empty,
+.c4p-table-calendar-month thead:first-child tr:first-child th.empty {
+  background-color: #d0d0d0;
+  border: none;
+}
+.c4p-table-calendar-month th.disabled,
+.c4p-table-calendar-month td.disabled {
+  background-color: #000000;
+}
+.c4p-table-calendar-next {
+  color: #b7b7b7;
+  border: none;
+  table-layout: fixed;
+  width: 100%;
+}
+.c4p-table-calendar-next td {
+  background-color: #f4edd5;
+  border: 1px solid #d0d0d0;
+}
+.c4p-table-calendar-next td .btn {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  border: none;
+}
+.c4p-table-calendar-next td .btn span {
+  position: absolute;
+  top: 35%;
+  left: 30%;
+}
+.c4p-table-calendar-next td .btn-primary {
+  background-color: #c9a734;
+}
+.c4p-table-calendar-next th {
+  background-color: white;
+  border: none;
+}
+.c4p-table-calendar-next th.disabled,
+.c4p-table-calendar-next td.disabled {
+  background-color: #000000;
+}
 .c4p-header-std {
   position: relative;
   display: block;
@@ -24143,127 +24298,6 @@ body {
 .c4p-related-square-text {
   text-align: right;
   line-height: 1em;
-}
-.c4p-hour-selected {
-  border: #e51400;
-}
-.c4p-label-calendar {
-  background-color: transparent;
-  color: #888888;
-}
-.c4p-label-calendar-light {
-  background-color: transparent;
-  color: #999999;
-}
-.c4p-label-calendar-dark {
-  background-color: transparent;
-  color: #333333;
-}
-.c4p-label-calendar-notallday {
-  background-color: white;
-}
-.c4p-label-calendar-notallday-inverse {
-  background-color: #c9a734;
-}
-.c4p-label-calendar-all-day {
-  background-color: #d5b95b;
-}
-.c4p-label-calendar-day {
-  background-color: transparent;
-  color: #4f4215;
-}
-.c4p-icon-calendar-allday {
-  color: #000000;
-}
-table,
-.table {
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none;
-}
-table th,
-.table th,
-table td,
-.table td {
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none;
-}
-table th,
-.table th {
-  vertical-align: center;
-  text-align: center;
-}
-table h1,
-.table h1,
-table h2,
-.table h2,
-table h3,
-.table h3,
-table h4,
-.table h4,
-table h5,
-.table h5,
-table h6,
-.table h6 {
-  padding: 0;
-  margin: 0;
-}
-.c4p-table-layout {
-  background-color: #d0d0d0;
-}
-.c4p-table-layout th,
-.c4p-table-layout td {
-  background-color: #d0d0d0;
-}
-.c4p-table-calendar-month {
-  color: #b7b7b7;
-  border: none;
-}
-.c4p-table-calendar-month th {
-  background-color: #9d9d9d;
-  border: 1px solid #d0d0d0;
-}
-.c4p-table-calendar-month td {
-  background-color: white;
-  border: 1px solid #d0d0d0;
-}
-.c4p-table-calendar-month th.c4p-cell-initial .c4p-label-calendar,
-.c4p-table-calendar-month td.c4p-cell-initial .c4p-label-calendar {
-  color: white;
-  background-color: #cccccc;
-}
-.c4p-table-calendar-month th.c4p-cell-selected,
-.c4p-table-calendar-month td.c4p-cell-selected {
-  border: 2px #c9a734 solid;
-}
-.c4p-table-calendar-month th.c4p-cell-weekend,
-.c4p-table-calendar-month td.c4p-cell-weekend {
-  background-color: #f2f2f2;
-}
-.c4p-table-calendar-month th.c4p-cell-disabled .c4p-label-calendar,
-.c4p-table-calendar-month td.c4p-cell-disabled .c4p-label-calendar {
-  color: #ffffff;
-}
-.c4p-table-calendar-month th.c4p-cell-disabled .c4p-label-calendar-dark,
-.c4p-table-calendar-month td.c4p-cell-disabled .c4p-label-calendar-dark {
-  color: #eaeaea;
-}
-.c4p-table-calendar-month th.c4p-cell-disabled .c4p-label-calendar-allday,
-.c4p-table-calendar-month td.c4p-cell-disabled .c4p-label-calendar-allday {
-  background-color: #333333;
-}
-.c4p-table-calendar-month thead:first-child tr:first-child th {
-  border: 1px solid #b7b7b7;
-}
-.c4p-table-calendar-month th.empty,
-.c4p-table-calendar-month thead:first-child tr:first-child th.empty {
-  background-color: #d0d0d0;
-  border: none;
-}
-.c4p-table-calendar-month th.disabled,
-.c4p-table-calendar-month td.disabled {
-  background-color: #000000;
 }
 
 /* CORE STYLES */
